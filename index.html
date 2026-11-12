@@ -1,0 +1,2697 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>物理快打：科學家格鬥賽 (PHYSICS FIGHTER)</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Traditional Chinese + Arcade Retro Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,600;0,700;1,700&family=Noto+Sans+TC:wght@500;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --stone-bg: #d9c39e;
+      --stone-dark: #8c6d46;
+      --shutter-blue: #2b7a9b;
+      --shutter-light: #4aa3c7;
+      --chalkboard: #1b2421;
+      --arcade-gold: #ffcc00;
+      --arcade-red: #ff2a2a;
+    }
+
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: manipulation;
+    }
+
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Noto Sans TC', 'Chakra Petch', sans-serif;
+      background-color: #14110f;
+      color: #fff;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    .font-arcade {
+      font-family: 'Press Start 2P', 'Chakra Petch', monospace;
+    }
+
+    .font-tech {
+      font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+    }
+
+    /* European Stone Brick Wall Texture matching the reference image */
+    .stone-wall-bg {
+      background-color: #cfa97e;
+      background-image:
+        linear-gradient(335deg, rgba(140, 102, 58, 0.25) 23px, transparent 23px),
+        linear-gradient(155deg, rgba(140, 102, 58, 0.25) 23px, transparent 23px),
+        linear-gradient(335deg, rgba(255, 240, 215, 0.25) 23px, transparent 23px),
+        linear-gradient(155deg, rgba(255, 240, 215, 0.25) 23px, transparent 23px);
+      background-size: 58px 58px;
+      background-position: 0px 2px, 4px 35px, 29px 31px, 34px 6px;
+      box-shadow: inset 0 0 60px rgba(45, 28, 10, 0.65);
+    }
+
+    /* Blue Louvered Shutter Styling */
+    .shutter-left, .shutter-right {
+      background: repeating-linear-gradient(
+        to bottom,
+        #256d8c 0px,
+        #256d8c 5px,
+        #16485e 5px,
+        #16485e 8px,
+        #3a92b8 8px,
+        #3a92b8 10px
+      );
+      border: 2px solid #133b4d;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.45);
+    }
+
+    /* Chalkboard Window Interior */
+    .chalkboard-window {
+      background: radial-gradient(circle at 50% 35%, #26332e 0%, #141c19 100%);
+      border-top: 4px solid #b58d5a;
+      border-left: 3px solid #9e7746;
+      border-right: 3px solid #9e7746;
+      box-shadow: inset 0 6px 14px rgba(0,0,0,0.85);
+    }
+
+    /* Parchment Name Plaque */
+    .parchment-plaque {
+      background: linear-gradient(180deg, #f3e2c3 0%, #dfc292 100%);
+      border: 2px solid #7d5b32;
+      color: #2b1a08;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.45);
+    }
+
+    /* Arcade Selection Cursors */
+    @keyframes pulseP1 {
+      0%, 100% { box-shadow: 0 0 0 3px #ffcc00, 0 0 18px #ffaa00; transform: scale(1.03); }
+      50% { box-shadow: 0 0 0 4px #ffffff, 0 0 26px #ffcc00; transform: scale(1.05); }
+    }
+
+    @keyframes pulseCPU {
+      0%, 100% { box-shadow: 0 0 0 3px #ff3333, 0 0 18px #ff0000; }
+      50% { box-shadow: 0 0 0 4px #ff9999, 0 0 24px #ff3333; }
+    }
+
+    .selected-p1 {
+      animation: pulseP1 0.9s infinite ease-in-out;
+      z-index: 20;
+    }
+
+    .selected-cpu {
+      animation: pulseCPU 0.9s infinite ease-in-out;
+      z-index: 19;
+    }
+
+    /* Street Fighter Title Gradient Text */
+    .sf-title {
+      background: linear-gradient(180deg, #fff799 0%, #ffcc00 45%, #ff5500 85%, #b30000 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 0 #2b0900) drop-shadow(0 0 12px rgba(255, 140, 0, 0.55));
+    }
+
+    /* Arcade Button Styles */
+    .arcade-btn {
+      transition: transform 0.08s ease, filter 0.1s ease;
+      box-shadow: 0 4px 0 rgba(0,0,0,0.65), inset 0 2px 2px rgba(255,255,255,0.4);
+    }
+    .arcade-btn:active, .arcade-btn.pressed {
+      transform: translateY(3px) scale(0.96);
+      box-shadow: 0 1px 0 rgba(0,0,0,0.65), inset 0 1px 2px rgba(255,255,255,0.2);
+      filter: brightness(1.2);
+    }
+
+    /* Scanline Overlay for Retro Arcade Feel */
+    .scanlines::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.11) 0px,
+        rgba(0, 0, 0, 0.11) 1px,
+        transparent 1px,
+        transparent 3px
+      );
+      pointer-events: none;
+      z-index: 15;
+    }
+
+    /* Custom Scrollbar for Move List Modal */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #1c1917;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #d97706;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center justify-center min-h-screen bg-stone-950">
+
+  <!-- Top Arcade Header Bar -->
+  <header class="w-full max-w-6xl px-3 py-2 flex flex-wrap items-center justify-between gap-2 bg-stone-900/95 border-b-2 border-amber-500/60 shadow-lg z-30">
+    <div class="flex items-center gap-2 sm:gap-3">
+      <span class="px-2 py-0.5 bg-red-600 text-white text-xs font-arcade rounded animate-pulse">INSERT COIN</span>
+      <h1 class="text-lg sm:text-2xl font-black tracking-wider sf-title">物理快打：科學家格鬥賽</h1>
+      <span class="hidden md:inline-block text-xs font-tech text-amber-300/90 tracking-widest border border-amber-500/40 px-2 py-0.5 rounded-full">PHYSICS FIGHTER II TURBO</span>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button id="btn-movelist" class="arcade-btn px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs sm:text-sm rounded-lg flex items-center gap-1 cursor-pointer">
+        <span>📜</span> <span>物理招式表</span>
+      </button>
+      <button id="btn-sound" class="arcade-btn px-3 py-1.5 bg-sky-600 hover:bg-sky-500 text-white font-bold text-xs sm:text-sm rounded-lg flex items-center gap-1 cursor-pointer">
+        <span id="sound-icon">🔊</span> <span id="sound-label" class="hidden sm:inline">音效開</span>
+      </button>
+      <button id="btn-back-select" class="hidden arcade-btn px-3 py-1.5 bg-rose-700 hover:bg-rose-600 text-white font-bold text-xs sm:text-sm rounded-lg cursor-pointer">
+        🔙 重選角色
+      </button>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- SCREEN 1: 3x3 WINDOW GRID CHARACTER SELECT (經典歐風窗台選角畫面)        -->
+  <!-- ===================================================================== -->
+  <main id="select-screen" class="w-full max-w-6xl p-2 sm:p-4 flex-1 flex flex-col justify-between">
+    <div class="stone-wall-bg rounded-2xl border-4 border-amber-900/80 p-3 sm:p-5 shadow-2xl relative overflow-hidden">
+      <!-- Decorative Ivy Leaves on Edges (Matching Reference Image) -->
+      <div class="pointer-events-none absolute top-0 left-0 text-2xl sm:text-4xl opacity-85 select-none">🌿🍃</div>
+      <div class="pointer-events-none absolute top-0 right-0 text-2xl sm:text-4xl opacity-85 select-none">🍃🌿</div>
+      <div class="pointer-events-none absolute bottom-0 left-0 text-2xl sm:text-4xl opacity-85 select-none">🌿</div>
+      <div class="pointer-events-none absolute bottom-0 right-0 text-2xl sm:text-4xl opacity-85 select-none">🌿</div>
+
+      <!-- Select Prompt Banner -->
+      <div class="text-center mb-3 sm:mb-4 relative z-10">
+        <div id="select-step-banner" class="inline-block px-4 py-1.5 rounded-full bg-stone-900/90 border-2 border-amber-400 text-amber-300 font-black text-sm sm:text-lg tracking-wide shadow-md">
+          STEP 1：請選擇你的物理學家 (1P)
+        </div>
+      </div>
+
+      <!-- Main Layout: Left 3x3 Windows Grid + Right VS & Stage Panel -->
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start relative z-10">
+        
+        <!-- 3x3 Window Grid (Matches exact 9 positions in user's image) -->
+        <div id="scientist-grid" class="lg:col-span-8 grid grid-cols-3 gap-2 sm:gap-3.5">
+          <!-- Cards populated dynamically by JS -->
+        </div>
+
+        <!-- Right Side: Fighter Preview, Stats, Stage & Start Controls -->
+        <div class="lg:col-span-4 bg-stone-900/95 border-2 border-amber-500/70 rounded-2xl p-3.5 sm:p-4 shadow-xl flex flex-col gap-3">
+          
+          <!-- VS Preview Box -->
+          <div class="grid grid-cols-11 items-center gap-1 bg-stone-950/90 p-2.5 rounded-xl border border-stone-700">
+            <!-- P1 Preview -->
+            <div class="col-span-5 flex flex-col items-center text-center">
+              <span class="text-[11px] font-arcade text-amber-400 mb-1">1P PLAYER</span>
+              <canvas id="preview-p1-canvas" width="96" height="96" class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-stone-800 border-2 border-amber-400"></canvas>
+              <div id="preview-p1-name" class="mt-1 font-black text-sm sm:text-base text-amber-300 leading-tight">牛頓</div>
+              <div id="preview-p1-formula" class="text-[11px] font-tech text-emerald-300">F = ma</div>
+            </div>
+
+            <!-- VS Emblem -->
+            <div class="col-span-1 flex flex-col items-center justify-center">
+              <span class="font-arcade text-base sm:text-lg text-red-500 italic drop-shadow">VS</span>
+            </div>
+
+            <!-- CPU Preview -->
+            <div class="col-span-5 flex flex-col items-center text-center">
+              <span class="text-[11px] font-arcade text-red-400 mb-1">CPU RIVAL</span>
+              <canvas id="preview-cpu-canvas" width="96" height="96" class="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-stone-800 border-2 border-red-500"></canvas>
+              <div id="preview-cpu-name" class="mt-1 font-black text-sm sm:text-base text-red-300 leading-tight">愛因斯坦</div>
+              <div id="preview-cpu-formula" class="text-[11px] font-tech text-emerald-300">E = mc²</div>
+            </div>
+          </div>
+
+          <!-- Active Fighter Details & Stats -->
+          <div id="active-fighter-card" class="bg-stone-800/90 rounded-xl p-3 border border-amber-500/30 text-xs sm:text-sm">
+            <div class="flex items-center justify-between border-b border-stone-700 pb-1.5 mb-2">
+              <div>
+                <span id="detail-name" class="font-black text-base text-amber-300">牛頓 Isaac Newton</span>
+                <span id="detail-years" class="text-xs text-stone-400 ml-1">(1642–1726)</span>
+              </div>
+              <span id="detail-formula" class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-500/40 font-tech font-bold text-xs">F = ma</span>
+            </div>
+            <p id="detail-field" class="text-amber-100/90 text-xs mb-2">萬有引力・牛頓運動定律</p>
+
+            <!-- Stat Bars -->
+            <div class="space-y-1.5 text-xs">
+              <div class="flex items-center gap-2">
+                <span class="w-12 text-stone-300 font-bold">力量</span>
+                <div class="flex-1 h-2.5 bg-stone-950 rounded-full overflow-hidden border border-stone-700">
+                  <div id="stat-power" class="h-full bg-gradient-to-r from-amber-500 to-red-500 rounded-full transition-all duration-300" style="width: 85%"></div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-12 text-stone-300 font-bold">速度</span>
+                <div class="flex-1 h-2.5 bg-stone-950 rounded-full overflow-hidden border border-stone-700">
+                  <div id="stat-speed" class="h-full bg-gradient-to-r from-sky-400 to-blue-600 rounded-full transition-all duration-300" style="width: 75%"></div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-12 text-stone-300 font-bold">理論</span>
+                <div class="flex-1 h-2.5 bg-stone-950 rounded-full overflow-hidden border border-stone-700">
+                  <div id="stat-special" class="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full transition-all duration-300" style="width: 90%"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Signature Moves Summary -->
+            <div class="mt-2.5 pt-2 border-t border-stone-700 space-y-1 text-xs">
+              <div class="text-sky-300"><span class="font-bold text-white">[L 必殺技]</span> <span id="detail-special-name">萬有引力蘋果</span></div>
+              <div class="text-amber-300"><span class="font-bold text-white">[U 超必殺]</span> <span id="detail-super-name">稜鏡光譜與 F=ma 衝刺</span></div>
+            </div>
+          </div>
+
+          <!-- Stage & Difficulty Selectors -->
+          <div class="grid grid-cols-2 gap-2 text-xs">
+            <div>
+              <label class="block text-stone-400 font-bold mb-1">🏟️ 決鬥場地</label>
+              <select id="stage-select" class="w-full bg-stone-800 border border-stone-600 rounded-lg px-2 py-1.5 text-white font-bold focus:outline-none focus:border-amber-400">
+                <option value="academy">歐洲學院窗台</option>
+                <option value="chalkboard">黑板方程式實驗室</option>
+                <option value="quantum">量子時空裂縫</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-stone-400 font-bold mb-1">🎓 AI 難度</label>
+              <select id="difficulty-select" class="w-full bg-stone-800 border border-stone-600 rounded-lg px-2 py-1.5 text-white font-bold focus:outline-none focus:border-amber-400">
+                <option value="easy">物理初學者</option>
+                <option value="normal" selected>大學研究員</option>
+                <option value="hard">諾貝爾獎得主</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="flex gap-2">
+            <button id="btn-random-rival" class="arcade-btn flex-1 py-2.5 bg-purple-700 hover:bg-purple-600 text-white font-bold text-xs sm:text-sm rounded-xl cursor-pointer">
+              🎲 隨機對手
+            </button>
+            <button id="btn-start-fight" class="arcade-btn flex-[1.6] py-2.5 bg-gradient-to-r from-amber-500 via-orange-500 to-red-600 hover:brightness-110 text-white font-black text-sm sm:text-base rounded-xl tracking-wider cursor-pointer shadow-lg">
+              ⚔️ 開始決鬥 FIGHT!
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- SCREEN 2: 60FPS ARCADE FIGHTING ARENA (街機格鬥對戰舞台)               -->
+  <!-- ===================================================================== -->
+  <section id="arena-screen" class="hidden w-full max-w-6xl p-2 sm:p-3 flex-1 flex flex-col items-center justify-center">
+    
+    <!-- Responsive Canvas Container -->
+    <div id="canvas-wrapper" class="relative w-full aspect-[16/9] max-h-[68vh] bg-stone-950 rounded-2xl border-4 border-amber-600/80 shadow-2xl overflow-hidden scanlines">
+      <canvas id="fight-canvas" class="w-full h-full block"></canvas>
+
+      <!-- Post-Match Overlay Banner (Victory / Defeat / Next Round) -->
+      <div id="match-overlay" class="hidden absolute inset-0 bg-black/75 z-30 flex flex-col items-center justify-center p-4 text-center backdrop-blur-xs">
+        <div id="match-result-title" class="text-3xl sm:text-5xl font-black sf-title mb-2">YOU WIN!</div>
+        <div id="match-quote" class="max-w-lg bg-stone-900/90 border-2 border-amber-400 rounded-xl px-4 py-3 text-amber-200 text-sm sm:text-lg font-bold mb-5 shadow-lg">
+          「如果我看得比別人更遠，那是因為我站在巨人的肩膀上！」
+        </div>
+        <div class="flex flex-wrap justify-center gap-3">
+          <button id="btn-rematch" class="arcade-btn px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black rounded-xl text-sm sm:text-base cursor-pointer">
+            🔄 再戰一場 (REMATCH)
+          </button>
+          <button id="btn-next-challenger" class="arcade-btn px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-stone-950 font-black rounded-xl text-sm sm:text-base cursor-pointer">
+            ➡️ 挑戰下一位科學家
+          </button>
+          <button id="btn-overlay-select" class="arcade-btn px-5 py-2.5 bg-stone-700 hover:bg-stone-600 text-white font-bold rounded-xl text-sm sm:text-base cursor-pointer">
+            🪟 返回窗台選角
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Arcade Control Deck (Interactive Touch/Mouse Buttons + Keyboard Hint) -->
+    <div class="w-full mt-2.5 bg-stone-900/95 border-2 border-stone-700 rounded-2xl p-2.5 sm:p-3 shadow-xl">
+      <div class="flex flex-col md:flex-row items-center justify-between gap-3">
+        
+        <!-- D-Pad / Movement Controls -->
+        <div class="flex items-center gap-2">
+          <button data-key="ArrowLeft" class="ctrl-btn arcade-btn w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-stone-700 hover:bg-stone-600 text-white font-black text-xl flex items-center justify-center cursor-pointer">◀</button>
+          <div class="flex flex-col gap-1.5">
+            <button data-key="ArrowUp" class="ctrl-btn arcade-btn w-12 h-10 sm:w-14 sm:h-11 rounded-xl bg-sky-700 hover:bg-sky-600 text-white font-bold text-xs sm:text-sm flex items-center justify-center cursor-pointer">▲ 跳躍</button>
+            <button data-key="ArrowDown" class="ctrl-btn arcade-btn w-12 h-10 sm:w-14 sm:h-11 rounded-xl bg-indigo-700 hover:bg-indigo-600 text-white font-bold text-xs sm:text-sm flex items-center justify-center cursor-pointer">▼ 防禦</button>
+          </div>
+          <button data-key="ArrowRight" class="ctrl-btn arcade-btn w-12 h-12 sm:w-14 sm:h-14 rounded-xl bg-stone-700 hover:bg-stone-600 text-white font-black text-xl flex items-center justify-center cursor-pointer">▶</button>
+        </div>
+
+        <!-- Center Keyboard Guide -->
+        <div class="hidden lg:flex flex-col items-center text-center text-xs text-stone-400 space-y-1">
+          <div class="font-bold text-amber-300">⌨️ 鍵盤操作說明 (支援連段 Cancel！)</div>
+          <div>移動/跳/防禦：<span class="text-white font-mono bg-stone-800 px-1.5 py-0.5 rounded">W A S D</span> 或 <span class="text-white font-mono bg-stone-800 px-1.5 py-0.5 rounded">方向鍵</span></div>
+          <div>輕擊：<span class="text-amber-300 font-mono bg-stone-800 px-1.5 py-0.5 rounded">J</span> ｜ 重擊：<span class="text-orange-300 font-mono bg-stone-800 px-1.5 py-0.5 rounded">K</span> ｜ 物理必殺：<span class="text-sky-300 font-mono bg-stone-800 px-1.5 py-0.5 rounded">L</span> ｜ 滿氣超必殺：<span class="text-rose-400 font-mono bg-stone-800 px-1.5 py-0.5 rounded">U / Space</span></div>
+        </div>
+
+        <!-- 4 Arcade Action Buttons (Street Fighter 4-Button Layout) -->
+        <div class="grid grid-cols-4 gap-2 sm:gap-3">
+          <button data-key="KeyJ" class="ctrl-btn arcade-btn w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-b from-amber-400 to-amber-600 border-2 border-amber-200 text-stone-950 font-black flex flex-col items-center justify-center cursor-pointer">
+            <span class="text-xs sm:text-sm leading-none">輕擊</span>
+            <span class="text-[10px] font-arcade mt-0.5">J</span>
+          </button>
+          <button data-key="KeyK" class="ctrl-btn arcade-btn w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-b from-orange-500 to-red-600 border-2 border-orange-200 text-white font-black flex flex-col items-center justify-center cursor-pointer">
+            <span class="text-xs sm:text-sm leading-none">重擊</span>
+            <span class="text-[10px] font-arcade mt-0.5">K</span>
+          </button>
+          <button data-key="KeyL" class="ctrl-btn arcade-btn w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-b from-sky-400 to-blue-700 border-2 border-sky-200 text-white font-black flex flex-col items-center justify-center cursor-pointer">
+            <span class="text-xs sm:text-sm leading-none">必殺</span>
+            <span class="text-[10px] font-arcade mt-0.5">L</span>
+          </button>
+          <button id="btn-super-touch" data-key="KeyU" class="ctrl-btn arcade-btn w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-b from-fuchsia-500 via-rose-600 to-amber-500 border-2 border-yellow-200 text-white font-black flex flex-col items-center justify-center cursor-pointer">
+            <span class="text-xs sm:text-sm leading-none">超必殺</span>
+            <span class="text-[10px] font-arcade mt-0.5">U</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL: ALL 9 PHYSICISTS MOVE LIST (物理學家招式大全)                    -->
+  <!-- ===================================================================== -->
+  <div id="movelist-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-3 sm:p-5 backdrop-blur-xs">
+    <div class="bg-stone-900 border-2 border-amber-500 rounded-2xl max-w-4xl w-full max-h-[85vh] flex flex-col shadow-2xl overflow-hidden">
+      <div class="px-4 py-3 bg-stone-950 border-b border-stone-700 flex items-center justify-between">
+        <h2 class="text-base sm:text-xl font-black text-amber-400">📜 九大物理學家專屬必殺技與方程式指南</h2>
+        <button id="btn-close-movelist" class="px-3 py-1 bg-rose-600 hover:bg-rose-500 text-white font-bold rounded-lg text-sm cursor-pointer">✕ 關閉</button>
+      </div>
+      <div id="movelist-content" class="p-4 overflow-y-auto grid grid-cols-1 md:grid-cols-2 gap-3 text-xs sm:text-sm">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- COMPLETE GAME ENGINE & PROCEDURAL SPRITE ART                          -->
+  <!-- ===================================================================== -->
+  <script>
+    /**
+     * 1. PHYSICISTS DATABASE (Exact 9 Scientists from User's 3x3 Window Image)
+     */
+    const SCIENTISTS = [
+      {
+        id: 'newton',
+        name: '牛頓',
+        enName: 'Isaac Newton',
+        years: '1642–1726',
+        field: '萬有引力・牛頓運動定律',
+        formula: 'F = ma',
+        bgFormula: ['F = ma', 'F = G·m₁m₂/r²'],
+        power: 88,
+        speed: 74,
+        specialStat: 92,
+        primaryColor: '#2d241e',
+        accentColor: '#e62e2e',
+        hairType: 'newton_curls',
+        hairColor: '#c9a66b',
+        prop: 'apple',
+        specialName: '萬有引力蘋果 (Gravity Apple)',
+        specialDesc: '從高空召喚巨型紅蘋果垂直砸向對手並彈跳追擊！',
+        superName: '七彩稜鏡光譜 & F=ma 衝刺',
+        superDesc: '發射三稜鏡七彩折射雷射砲，隨後以 F=ma 加速度撞飛對手！',
+        quote: '「如果我看得比別人更遠，那是因為我站在巨人的肩膀上！」'
+      },
+      {
+        id: 'huygens',
+        name: '惠更斯',
+        enName: 'Christiaan Huygens',
+        years: '1629–1695',
+        field: '擺的理論・波動理論',
+        formula: 'T = 2π√(L/g)',
+        bgFormula: ['T = 2π√(L/g)', 'λ = v / f'],
+        power: 78,
+        speed: 82,
+        specialStat: 90,
+        primaryColor: '#6e2626',
+        accentColor: '#eab308',
+        hairType: 'huygens_curls',
+        hairColor: '#8c4a27',
+        prop: 'pendulum',
+        specialName: '黃金單擺與惠更斯子波',
+        specialDesc: '揮舞黃銅單擺重擊，並釋放向前擴散的半圓形波動！',
+        superName: '等時共振海嘯波',
+        superDesc: '引發多層次諧振波動風暴，將對手連續浮空連擊！',
+        quote: '「波前上的每一點，都是產生新球面子波的波源！」'
+      },
+      {
+        id: 'galileo',
+        name: '伽利略',
+        enName: 'Galileo Galilei',
+        years: '1564–1642',
+        field: '自由落體・慣性定律',
+        formula: 'g = 9.8 m/s²',
+        bgFormula: ['s = ½gt²', 'v = v₀ + gt'],
+        power: 84,
+        speed: 80,
+        specialStat: 85,
+        primaryColor: '#1f2428',
+        accentColor: '#d4a359',
+        hairType: 'galileo_beard',
+        hairColor: '#b8bec4',
+        prop: 'telescope',
+        specialName: '望遠鏡突刺與自由落體',
+        specialDesc: '以黃銅望遠鏡突刺，同時從空中落下大小兩顆鐵球同時砸擊！',
+        superName: '慣性參考系殘影連擊',
+        superDesc: '在伽利略相對性原理下化作高速殘影穿梭全場連環轟擊！',
+        quote: '「然而，地球還是在轉動！（Eppur si muove!）」'
+      },
+      {
+        id: 'maxwell',
+        name: '馬克斯威',
+        enName: 'James Clerk Maxwell',
+        years: '1831–1879',
+        field: '電磁理論',
+        formula: '∇×E = -∂B/∂t',
+        bgFormula: ['∇·E = 0', '∇·B = 0', '∇×E = -∂B/∂t'],
+        power: 82,
+        speed: 84,
+        specialStat: 96,
+        primaryColor: '#29292e',
+        accentColor: '#38bdf8',
+        hairType: 'maxwell_beard',
+        hairColor: '#6e645f',
+        prop: 'manuscript',
+        specialName: '電磁橫波加農砲',
+        specialDesc: '發射電場與磁場正交震盪的正弦電磁波貫穿對手！',
+        superName: '四大方程式電磁風暴',
+        superDesc: '展開馬克斯威四大方程式力場，召喚高壓電磁閃電轟炸！',
+        quote: '「光就是同一介質中的電磁橫波！」'
+      },
+      {
+        id: 'faraday',
+        name: '法拉第',
+        enName: 'Michael Faraday',
+        years: '1791–1867',
+        field: '電磁感應・電解定律',
+        formula: 'ε = -dΦ_B/dt',
+        bgFormula: ['ε = -dΦ/dt', 'Q = I·t'],
+        power: 80,
+        speed: 86,
+        specialStat: 94,
+        primaryColor: '#23272e',
+        accentColor: '#22c55e',
+        hairType: 'faraday_wave',
+        hairColor: '#d6dce2',
+        prop: 'flask',
+        specialName: '電解綠液燒瓶電弧',
+        specialDesc: '投擲裝滿綠色電解液的圓底燒瓶，落地爆出高壓感應電場！',
+        superName: '法拉第籠與電磁感應雷暴',
+        superDesc: '開啟法拉第金屬籠護盾並引爆全方位感應電流雷暴！',
+        quote: '「沒有什麼好得太不真實的，只要它符合自然法則！」'
+      },
+      {
+        id: 'planck',
+        name: '普朗克',
+        enName: 'Max Planck',
+        years: '1858–1947',
+        field: '量子假說',
+        formula: 'E = hν',
+        bgFormula: ['E = hν', 'h = 6.626×10⁻³⁴'],
+        power: 76,
+        speed: 88,
+        specialStat: 97,
+        primaryColor: '#1e2024',
+        accentColor: '#f59e0b',
+        hairType: 'planck_bald',
+        hairColor: '#9ca3af',
+        prop: 'notes',
+        specialName: '離散能量量子連彈',
+        specialDesc: '連續發射三顆不連續的 E=hν 高頻能量量子光團！',
+        superName: '黑體輻射極限巨浪',
+        superDesc: '具現化黑體輻射光譜曲線化作熾熱能量巨浪席捲擂台！',
+        quote: '「能量並非連續流動，而是由一份份的『量子』組成！」'
+      },
+      {
+        id: 'einstein',
+        name: '愛因斯坦',
+        enName: 'Albert Einstein',
+        years: '1879–1955',
+        field: '相對論・光電效應',
+        formula: 'E = mc²',
+        bgFormula: ['E = mc²', 'G_μν = 8πT_μν'],
+        power: 92,
+        speed: 80,
+        specialStat: 99,
+        primaryColor: '#4b5057',
+        accentColor: '#a855f7',
+        hairType: 'einstein_wild',
+        hairColor: '#f3f4f6',
+        prop: 'chalk',
+        specialName: '光電效應光子束',
+        specialDesc: '射出高能紫外光子束，將對手身上的電子直接撞飛！',
+        superName: '時空曲率黑洞 & E=mc² 核爆',
+        superDesc: '扭曲時空網格將對手吸入重力井，引爆終極質能轉換閃光！',
+        quote: '「想像力比知識更重要，因為知識是有限的！」'
+      },
+      {
+        id: 'bohr',
+        name: '波耳',
+        enName: 'Niels Bohr',
+        years: '1885–1962',
+        field: '量子模型',
+        formula: 'ΔE = E₂ - E₁',
+        bgFormula: ['L = nℏ', 'ΔE = hν'],
+        power: 80,
+        speed: 92,
+        specialStat: 95,
+        primaryColor: '#263447',
+        accentColor: '#38bdf8',
+        hairType: 'bohr_swept',
+        hairColor: '#8d8782',
+        prop: 'atom',
+        specialName: '電子能階量子躍遷',
+        specialDesc: '瞬間量子躍遷閃現至對手身旁，以高速軌道電子發動突襲！',
+        superName: '波耳原子軌域大爆發',
+        superDesc: '展開巨大的黃金原子核與多層電子軌道環繞轟炸全場！',
+        quote: '「如果量子力學沒有震撼到你，那你一定還沒看懂它！」'
+      },
+      {
+        id: 'feynman',
+        name: '費曼',
+        enName: 'Richard Feynman',
+        years: '1918–1988',
+        field: '量子電動力學・物理推廣',
+        formula: 'QED ⟨f|e^{-iHt}|i⟩',
+        bgFormula: ['QED', '∫ D[x(t)] e^{iS/ℏ}'],
+        power: 83,
+        speed: 95,
+        specialStat: 96,
+        primaryColor: '#cbd5e1',
+        accentColor: '#fb7185',
+        hairType: 'feynman_wavy',
+        hairColor: '#52525b',
+        prop: 'bongo',
+        specialName: '費曼圖虛光子波',
+        specialDesc: '沿著發光費曼圖頂點射出之字形折線虛光子彈追擊對手！',
+        superName: '邦哥鼓節奏 & 路徑積分幻影',
+        superDesc: '敲響邦哥鼓並分裂出無數條量子路徑分身同時圍毆對手！',
+        quote: '「我認為我可以有把握地說，沒有人真正懂量子力學！」'
+      }
+    ];
+
+    /**
+     * 2. RETRO ARCADE WEB AUDIO SYNTHESIZER (Zero external audio dependencies)
+     */
+    class SoundFX {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+
+      init() {
+        if (!this.ctx) {
+          const AudioCtx = window.AudioContext || window.webkitAudioContext;
+          if (AudioCtx) this.ctx = new AudioCtx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume();
+        }
+      }
+
+      playTone(freq, endFreq, duration, type = 'square', gainVal = 0.14) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, now);
+        if (endFreq !== freq) {
+          osc.frequency.exponentialRampToValueAtTime(Math.max(20, endFreq), now + duration);
+        }
+        gain.gain.setValueAtTime(gainVal, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + duration);
+      }
+
+      playSelect() { this.playTone(520, 780, 0.08, 'square', 0.1); }
+      playConfirm() {
+        this.playTone(523.25, 523.25, 0.07, 'square', 0.12);
+        setTimeout(() => this.playTone(659.25, 659.25, 0.07, 'square', 0.12), 70);
+        setTimeout(() => this.playTone(1046.5, 1046.5, 0.16, 'square', 0.14), 140);
+      }
+      playSwing() { this.playTone(300, 110, 0.09, 'triangle', 0.1); }
+      playHit(heavy = false) {
+        this.playTone(heavy ? 160 : 220, 45, heavy ? 0.18 : 0.11, 'sawtooth', heavy ? 0.22 : 0.15);
+      }
+      playBlock() { this.playTone(680, 420, 0.07, 'square', 0.12); }
+      playSpecial() {
+        this.playTone(340, 920, 0.22, 'sawtooth', 0.16);
+        setTimeout(() => this.playTone(620, 1240, 0.18, 'square', 0.12), 60);
+      }
+      playSuper() {
+        [330, 440, 554, 659, 880, 1108].forEach((f, idx) => {
+          setTimeout(() => this.playTone(f, f * 1.15, 0.14, 'sawtooth', 0.15), idx * 45);
+        });
+      }
+      playKO() {
+        [440, 392, 349, 293, 220, 146].forEach((f, idx) => {
+          setTimeout(() => this.playTone(f, f * 0.85, 0.18, 'sawtooth', 0.18), idx * 90);
+        });
+      }
+    }
+
+    const sfx = new SoundFX();
+
+    /**
+     * 3. PROCEDURAL CHARACTER PORTRAIT & SPRITE RENDERER
+     * Draws detailed, unmistakable cartoon/arcade versions of each of the 9 physicists
+     */
+    function drawPhysicistAvatar(ctx, sci, opts = {}) {
+      const {
+        x = 0,
+        y = 0,
+        scale = 1,
+        facing = 1,
+        state = 'idle',
+        animTime = 0,
+        attackFrame = 0,
+        portraitMode = false
+      } = opts;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.scale(scale * facing, scale);
+
+      const bob = portraitMode ? 0 : Math.sin(animTime * 8) * (state === 'walk' ? 4 : 2);
+      const walkSwing = state === 'walk' ? Math.sin(animTime * 14) * 12 : 0;
+      const crouchOffset = state === 'crouch' ? 18 : 0;
+
+      // Ground Shadow (only in fight mode)
+      if (!portraitMode) {
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.35)';
+        ctx.beginPath();
+        ctx.ellipse(0, 0, 26, 7, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      ctx.translate(0, crouchOffset);
+
+      // --- LEGS (Fight mode only) ---
+      if (!portraitMode) {
+        ctx.lineWidth = 9;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = sci.id === 'feynman' ? '#334155' : '#18181b';
+
+        // Back Leg
+        ctx.beginPath();
+        ctx.moveTo(-6, -34 + bob);
+        ctx.lineTo(-10 - walkSwing * 0.7, -4);
+        ctx.stroke();
+
+        // Front Leg (with kick animation if heavy attacking)
+        ctx.beginPath();
+        ctx.moveTo(6, -34 + bob);
+        if (state === 'heavy') {
+          ctx.lineTo(36, -32);
+        } else {
+          ctx.lineTo(10 + walkSwing * 0.7, -4);
+        }
+        ctx.stroke();
+
+        // Shoes
+        ctx.fillStyle = '#09090b';
+        ctx.fillRect(-16 - walkSwing * 0.7, -6, 12, 6);
+        if (state !== 'heavy') {
+          ctx.fillRect(4 + walkSwing * 0.7, -6, 12, 6);
+        } else {
+          ctx.fillRect(32, -36, 12, 7);
+        }
+      }
+
+      // --- TORSO / COAT ---
+      const torsoTop = -74 + bob;
+      const torsoH = portraitMode ? 52 : 44;
+
+      // Coat body
+      ctx.fillStyle = sci.primaryColor;
+      ctx.beginPath();
+      ctx.roundRect(-18, torsoTop, 36, torsoH, 8);
+      ctx.fill();
+      ctx.strokeStyle = '#09090b';
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      // Shirt / Cravat / Tie details matching reference image
+      if (sci.id === 'newton' || sci.id === 'huygens') {
+        // White ruffled cravat / lace jabot
+        ctx.fillStyle = '#f8fafc';
+        ctx.beginPath();
+        ctx.moveTo(-6, torsoTop + 2);
+        ctx.lineTo(6, torsoTop + 2);
+        ctx.lineTo(4, torsoTop + 22);
+        ctx.lineTo(0, torsoTop + 18);
+        ctx.lineTo(-4, torsoTop + 22);
+        ctx.closePath();
+        ctx.fill();
+      } else if (sci.id === 'feynman') {
+        // Open-collar light shirt V-neck
+        ctx.fillStyle = '#f1c29b';
+        ctx.beginPath();
+        ctx.moveTo(-7, torsoTop);
+        ctx.lineTo(7, torsoTop);
+        ctx.lineTo(0, torsoTop + 14);
+        ctx.closePath();
+        ctx.fill();
+      } else if (sci.id === 'faraday') {
+        // White shirt + black bow tie
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(-5, torsoTop + 2, 10, 18);
+        ctx.fillStyle = '#09090b';
+        ctx.beginPath();
+        ctx.moveTo(-6, torsoTop + 4);
+        ctx.lineTo(6, torsoTop + 8);
+        ctx.lineTo(6, torsoTop + 4);
+        ctx.lineTo(-6, torsoTop + 8);
+        ctx.closePath();
+        ctx.fill();
+      } else {
+        // Classic white shirt & tie
+        ctx.fillStyle = '#f1f5f9';
+        ctx.fillRect(-4, torsoTop + 2, 8, 18);
+        ctx.fillStyle = sci.accentColor;
+        ctx.fillRect(-2, torsoTop + 5, 4, 14);
+      }
+
+      // --- BACK HAIR (Long wigs for Newton & Huygens) ---
+      if (sci.hairType === 'newton_curls' || sci.hairType === 'huygens_curls') {
+        ctx.fillStyle = sci.hairColor;
+        ctx.beginPath();
+        ctx.roundRect(-22, -98 + bob, 44, 38, 14);
+        ctx.fill();
+      }
+
+      // --- HEAD ---
+      const headY = -88 + bob;
+      ctx.fillStyle = '#f3c69f';
+      ctx.beginPath();
+      ctx.arc(0, headY, 15, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#3f2817';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+
+      // --- DISTINCTIVE HAIR & FACIAL HAIR ---
+      ctx.fillStyle = sci.hairColor;
+      if (sci.hairType === 'newton_curls' || sci.hairType === 'huygens_curls') {
+        // Volumetric baroque curls framing face
+        [-14, -10, 0, 10, 14].forEach((cx, i) => {
+          ctx.beginPath();
+          ctx.arc(cx, headY - 10 + (i % 2) * 3, 7, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        ctx.beginPath();
+        ctx.arc(-14, headY + 2, 6, 0, Math.PI * 2);
+        ctx.arc(14, headY + 2, 6, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (sci.hairType === 'galileo_beard') {
+        // Receding hair + majestic full grey beard
+        ctx.beginPath();
+        ctx.arc(-13, headY - 4, 5, 0, Math.PI * 2);
+        ctx.arc(13, headY - 4, 5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(-12, headY + 2);
+        ctx.quadraticCurveTo(0, headY + 25, 13, headY + 3);
+        ctx.quadraticCurveTo(3, headY + 10, -12, headY + 2);
+        ctx.fill();
+      } else if (sci.hairType === 'maxwell_beard') {
+        // Wavy hair + thick Victorian beard
+        ctx.beginPath();
+        ctx.arc(0, headY - 8, 14, Math.PI, 0);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.moveTo(-12, headY + 1);
+        ctx.quadraticCurveTo(2, headY + 24, 13, headY + 2);
+        ctx.fill();
+      } else if (sci.hairType === 'faraday_wave') {
+        // Parted wavy silver-white hair
+        ctx.beginPath();
+        ctx.arc(-6, headY - 10, 9, 0, Math.PI * 2);
+        ctx.arc(7, headY - 10, 8, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (sci.hairType === 'planck_bald') {
+        // Side hair + neat mustache + spectacles
+        ctx.beginPath();
+        ctx.arc(-13, headY - 4, 5, 0, Math.PI * 2);
+        ctx.fill();
+        // Mustache
+        ctx.fillRect(-2, headY + 3, 12, 3);
+      } else if (sci.hairType === 'einstein_wild') {
+        // Iconic fluffy wild white hair + white mustache
+        [
+          [-14, -8, 8], [-8, -14, 9], [2, -15, 9], [11, -11, 8], [15, -3, 7], [-16, 0, 7]
+        ].forEach(([hx, hy, hr]) => {
+          ctx.beginPath();
+          ctx.arc(hx, headY + hy, hr, 0, Math.PI * 2);
+          ctx.fill();
+        });
+        // White mustache
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.ellipse(5, headY + 4, 7, 3, 0, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (sci.hairType === 'bohr_swept') {
+        // Swept-back distinguished hair
+        ctx.beginPath();
+        ctx.ellipse(-1, headY - 11, 14, 7, -0.15, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (sci.hairType === 'feynman_wavy') {
+        // Wavy dark-silver hair
+        ctx.beginPath();
+        ctx.ellipse(0, headY - 11, 15, 8, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // --- EYES & EXPRESSIONS ---
+      ctx.fillStyle = '#111827';
+      if (state === 'hurt') {
+        // X eyes when hit!
+        ctx.strokeStyle = '#111827';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(3, headY - 5); ctx.lineTo(9, headY + 1);
+        ctx.moveTo(9, headY - 5); ctx.lineTo(3, headY + 1);
+        ctx.stroke();
+      } else {
+        // Determined arcade fighter brow & eye
+        ctx.beginPath();
+        ctx.arc(6, headY - 2, 2.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#111827';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(2, headY - 6);
+        ctx.lineTo(10, headY - 4);
+        ctx.stroke();
+
+        // Planck's round glasses
+        if (sci.id === 'planck') {
+          ctx.strokeStyle = '#d4af37';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.arc(6, headY - 2, 4.5, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+      }
+
+      // --- ARMS & SIGNATURE PROPS ---
+      ctx.strokeStyle = sci.primaryColor;
+      ctx.lineWidth = 8;
+      ctx.lineCap = 'round';
+
+      let punchExtend = 0;
+      if (state === 'light') punchExtend = 24;
+      if (state === 'special' || state === 'super') punchExtend = 20;
+
+      // Front Arm
+      ctx.beginPath();
+      ctx.moveTo(4, torsoTop + 10);
+      ctx.lineTo(18 + punchExtend, torsoTop + 14 - (state === 'special' ? 8 : 0));
+      ctx.stroke();
+
+      // Hand
+      const handX = 20 + punchExtend;
+      const handY = torsoTop + 14 - (state === 'special' ? 8 : 0);
+      ctx.fillStyle = '#f3c69f';
+      ctx.beginPath();
+      ctx.arc(handX, handY, 5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Signature Handheld Props (Visible in Idle/Portrait/Attacks)
+      if (sci.prop === 'apple') {
+        // Red Apple
+        ctx.fillStyle = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(handX + 3, handY - 4, 6, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#22c55e';
+        ctx.fillRect(handX + 2, handY - 12, 4, 3);
+      } else if (sci.prop === 'pendulum') {
+        // Swinging Brass Pendulum
+        const swing = Math.sin(animTime * 6) * 8;
+        ctx.strokeStyle = '#fde047';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(handX, handY);
+        ctx.lineTo(handX + swing, handY + 22);
+        ctx.stroke();
+        ctx.fillStyle = '#eab308';
+        ctx.beginPath();
+        ctx.arc(handX + swing, handY + 24, 6, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (sci.prop === 'telescope') {
+        // Golden Brass Telescope
+        ctx.save();
+        ctx.translate(handX, handY);
+        ctx.rotate(-0.45);
+        ctx.fillStyle = '#ca8a04';
+        ctx.fillRect(-6, -3, 28, 6);
+        ctx.strokeStyle = '#713f12';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(-6, -3, 28, 6);
+        ctx.restore();
+      } else if (sci.prop === 'flask') {
+        // Glowing Green Electrolysis Flask
+        ctx.fillStyle = 'rgba(186, 230, 253, 0.7)';
+        ctx.beginPath();
+        ctx.arc(handX + 2, handY - 6, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#22c55e';
+        ctx.beginPath();
+        ctx.arc(handX + 2, handY - 4, 5, 0, Math.PI);
+        ctx.fill();
+      } else if (sci.prop === 'atom') {
+        // Mini Bohr Atom Orbit in hand
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        ctx.ellipse(handX + 6, handY - 6, 10, 4, 0.5, 0, Math.PI * 2);
+        ctx.ellipse(handX + 6, handY - 6, 10, 4, -0.5, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fillStyle = '#facc15';
+        ctx.beginPath();
+        ctx.arc(handX + 6, handY - 6, 3, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (sci.prop === 'bongo' && !portraitMode) {
+        // Bongo Drums at waist!
+        ctx.fillStyle = '#b45309';
+        ctx.fillRect(10, torsoTop + 20, 10, 14);
+        ctx.fillRect(21, torsoTop + 22, 8, 12);
+        ctx.fillStyle = '#fef3c7';
+        ctx.fillRect(10, torsoTop + 19, 10, 3);
+        ctx.fillRect(21, torsoTop + 21, 8, 3);
+      }
+
+      // Guard / Block Energy Shield
+      if (state === 'block') {
+        ctx.strokeStyle = '#38bdf8';
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.25)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(16, -52, 34, -Math.PI * 0.45, Math.PI * 0.45);
+        ctx.stroke();
+        ctx.fill();
+      }
+
+      ctx.restore();
+    }
+
+    /**
+     * 4. CHARACTER SELECT UI & PREVIEW LOGIC
+     */
+    let p1Index = 0; // Default: Newton
+    let cpuIndex = 6; // Default: Einstein
+    let selectStep = 1; // 1 = choosing P1, 2 = choosing CPU
+
+    const gridEl = document.getElementById('scientist-grid');
+    const stepBannerEl = document.getElementById('select-step-banner');
+
+    function buildCharacterGrid() {
+      gridEl.innerHTML = '';
+      SCIENTISTS.forEach((sci, index) => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.id = `sci-card-${index}`;
+        card.className = 'relative flex flex-col items-stretch rounded-xl overflow-hidden transition-transform duration-150 hover:scale-[1.02] cursor-pointer focus:outline-none';
+
+        card.innerHTML = `
+          <!-- Window Frame with Left & Right Blue Shutters -->
+          <div class="relative flex items-stretch h-28 sm:h-36 bg-amber-950/30 rounded-t-xl overflow-hidden">
+            <div class="shutter-left w-3 sm:w-4 shrink-0"></div>
+            <div class="chalkboard-window flex-1 relative flex flex-col items-center justify-end overflow-hidden">
+              <span class="absolute top-1 right-1.5 text-[9px] sm:text-[11px] font-tech text-emerald-200/80 italic">${sci.formula}</span>
+              <canvas id="grid-portrait-${index}" width="90" height="90" class="w-20 h-20 sm:w-24 sm:h-24 object-contain"></canvas>
+              <!-- P1 / CPU Badges -->
+              <span id="badge-p1-${index}" class="hidden absolute top-1 left-1 px-1.5 py-0.5 bg-amber-400 text-stone-950 font-arcade text-[9px] rounded shadow">1P</span>
+              <span id="badge-cpu-${index}" class="hidden absolute bottom-1 right-1 px-1.5 py-0.5 bg-red-600 text-white font-arcade text-[9px] rounded shadow">CPU</span>
+            </div>
+            <div class="shutter-right w-3 sm:w-4 shrink-0"></div>
+          </div>
+          <!-- Parchment Plaque -->
+          <div class="parchment-plaque px-1.5 py-1 text-center rounded-b-xl">
+            <div class="font-black text-xs sm:text-sm leading-tight truncate">${sci.name} <span class="hidden sm:inline font-bold text-[11px] text-stone-700">${sci.enName.split(' ').pop()}</span></div>
+            <div class="text-[9px] sm:text-[10px] font-bold text-amber-900 truncate">${sci.field}</div>
+          </div>
+        `;
+
+        card.addEventListener('mouseenter', () => updateDetailPanel(sci));
+        card.addEventListener('click', () => handleScientistClick(index));
+        gridEl.appendChild(card);
+
+        // Render portrait on the window canvas
+        const pCanvas = document.getElementById(`grid-portrait-${index}`);
+        const pCtx = pCanvas.getContext('2d');
+        drawPhysicistAvatar(pCtx, sci, { x: 45, y: 112, scale: 1.02, facing: 1, portraitMode: true });
+      });
+
+      refreshSelectionVisuals();
+    }
+
+    function handleScientistClick(index) {
+      sfx.playSelect();
+      if (selectStep === 1) {
+        p1Index = index;
+        // Ensure CPU isn't identical unless clicked again
+        if (cpuIndex === p1Index) {
+          cpuIndex = (p1Index + 6) % SCIENTISTS.length;
+        }
+        selectStep = 2;
+        stepBannerEl.textContent = 'STEP 2：選擇對手科學家 (CPU)，或直接按「開始決鬥」！';
+        stepBannerEl.className = 'inline-block px-4 py-1.5 rounded-full bg-red-950/95 border-2 border-red-400 text-red-200 font-black text-sm sm:text-lg tracking-wide shadow-md';
+      } else {
+        cpuIndex = index;
+        selectStep = 1;
+        stepBannerEl.textContent = '就緒！可重選 1P 或點擊「開始決鬥 FIGHT!」';
+        stepBannerEl.className = 'inline-block px-4 py-1.5 rounded-full bg-emerald-950/95 border-2 border-emerald-400 text-emerald-200 font-black text-sm sm:text-lg tracking-wide shadow-md';
+      }
+      updateDetailPanel(SCIENTISTS[index]);
+      refreshSelectionVisuals();
+    }
+
+    function refreshSelectionVisuals() {
+      SCIENTISTS.forEach((_, i) => {
+        const card = document.getElementById(`sci-card-${i}`);
+        const bP1 = document.getElementById(`badge-p1-${i}`);
+        const bCpu = document.getElementById(`badge-cpu-${i}`);
+        card.classList.remove('selected-p1', 'selected-cpu');
+        bP1.classList.add('hidden');
+        bCpu.classList.add('hidden');
+
+        if (i === p1Index) {
+          card.classList.add('selected-p1');
+          bP1.classList.remove('hidden');
+        }
+        if (i === cpuIndex) {
+          if (i !== p1Index) card.classList.add('selected-cpu');
+          bCpu.classList.remove('hidden');
+        }
+      });
+
+      // Update VS Preview Canvases
+      const p1 = SCIENTISTS[p1Index];
+      const cpu = SCIENTISTS[cpuIndex];
+
+      const c1 = document.getElementById('preview-p1-canvas');
+      const ctx1 = c1.getContext('2d');
+      ctx1.clearRect(0, 0, c1.width, c1.height);
+      drawPhysicistAvatar(ctx1, p1, { x: 48, y: 118, scale: 1.08, facing: 1, portraitMode: true });
+      document.getElementById('preview-p1-name').textContent = p1.name;
+      document.getElementById('preview-p1-formula').textContent = p1.formula;
+
+      const c2 = document.getElementById('preview-cpu-canvas');
+      const ctx2 = c2.getContext('2d');
+      ctx2.clearRect(0, 0, c2.width, c2.height);
+      drawPhysicistAvatar(ctx2, cpu, { x: 48, y: 118, scale: 1.08, facing: -1, portraitMode: true });
+      document.getElementById('preview-cpu-name').textContent = cpu.name;
+      document.getElementById('preview-cpu-formula').textContent = cpu.formula;
+    }
+
+    function updateDetailPanel(sci) {
+      document.getElementById('detail-name').textContent = `${sci.name} ${sci.enName}`;
+      document.getElementById('detail-years').textContent = `(${sci.years})`;
+      document.getElementById('detail-formula').textContent = sci.formula;
+      document.getElementById('detail-field').textContent = sci.field;
+      document.getElementById('stat-power').style.width = `${sci.power}%`;
+      document.getElementById('stat-speed').style.width = `${sci.speed}%`;
+      document.getElementById('stat-special').style.width = `${sci.specialStat}%`;
+      document.getElementById('detail-special-name').textContent = sci.specialName;
+      document.getElementById('detail-super-name').textContent = sci.superName;
+    }
+
+    function populateMoveListModal() {
+      const container = document.getElementById('movelist-content');
+      container.innerHTML = SCIENTISTS.map(sci => `
+        <div class="bg-stone-800/90 border border-stone-700 rounded-xl p-3 flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <span class="font-black text-amber-300 text-sm sm:text-base">${sci.name} <span class="text-xs text-stone-400">${sci.enName}</span></span>
+            <span class="px-2 py-0.5 bg-emerald-950 text-emerald-300 font-tech text-xs rounded border border-emerald-600/40">${sci.formula}</span>
+          </div>
+          <div class="text-sky-300 font-bold text-xs">🔵 [L] 必殺技：${sci.specialName}</div>
+          <p class="text-stone-300 text-xs">${sci.specialDesc}</p>
+          <div class="text-rose-400 font-bold text-xs mt-1">🔥 [U / Space] 超必殺：${sci.superName}</div>
+          <p class="text-stone-300 text-xs">${sci.superDesc}</p>
+        </div>
+      `).join('');
+    }
+
+    /**
+     * 5. FIGHTING ENGINE (60FPS Canvas Physics Combat)
+     */
+    const canvas = document.getElementById('fight-canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Logical internal resolution for consistent hitboxes across all screen sizes
+    const ARENA_W = 1000;
+    const ARENA_H = 562;
+    const GROUND_Y = 468;
+    const GRAVITY = 0.78;
+
+    const keys = {};
+    const justPressed = {};
+
+    window.addEventListener('keydown', (e) => {
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Space'].includes(e.code)) {
+        e.preventDefault();
+      }
+      if (!keys[e.code]) {
+        justPressed[e.code] = true;
+      }
+      keys[e.code] = true;
+    });
+
+    window.addEventListener('keyup', (e) => {
+      keys[e.code] = false;
+    });
+
+    // Touch / Mouse Arcade Controls Binding
+    document.querySelectorAll('.ctrl-btn').forEach(btn => {
+      const code = btn.getAttribute('data-key');
+      const press = (e) => {
+        e.preventDefault();
+        if (!keys[code]) justPressed[code] = true;
+        keys[code] = true;
+        btn.classList.add('pressed');
+      };
+      const release = (e) => {
+        e.preventDefault();
+        keys[code] = false;
+        btn.classList.remove('pressed');
+      };
+      btn.addEventListener('mousedown', press);
+      btn.addEventListener('mouseup', release);
+      btn.addEventListener('mouseleave', release);
+      btn.addEventListener('touchstart', press, { passive: false });
+      btn.addEventListener('touchend', release, { passive: false });
+      btn.addEventListener('touchcancel', release, { passive: false });
+    });
+
+    class Fighter {
+      constructor(scientist, isPlayer, x) {
+        this.sci = scientist;
+        this.isPlayer = isPlayer;
+        this.x = x;
+        this.y = GROUND_Y;
+        this.vx = 0;
+        this.vy = 0;
+        this.facing = isPlayer ? 1 : -1;
+
+        this.maxHp = 1000;
+        this.hp = 1000;
+        this.displayHp = 1000; // Trailing damage bar
+        this.superMeter = 0; // 0 to 100
+        this.roundsWon = 0;
+
+        this.state = 'idle'; // idle, walk, jump, crouch, block, light, heavy, special, super, hurt, ko
+        this.stateTimer = 0;
+        this.animTime = 0;
+        this.hitRegistered = false;
+        this.comboCount = 0;
+        this.comboTimer = 0;
+        this.invulnTimer = 0;
+        this.faradayShieldTimer = 0;
+      }
+
+      resetForRound(x, facing) {
+        this.x = x;
+        this.y = GROUND_Y;
+        this.vx = 0;
+        this.vy = 0;
+        this.facing = facing;
+        this.hp = this.maxHp;
+        this.displayHp = this.maxHp;
+        this.state = 'idle';
+        this.stateTimer = 0;
+        this.hitRegistered = false;
+        this.comboCount = 0;
+        this.invulnTimer = 0;
+        this.faradayShieldTimer = 0;
+      }
+
+      get isGrounded() {
+        return this.y >= GROUND_Y - 0.5;
+      }
+
+      get isBusy() {
+        return ['light', 'heavy', 'special', 'super', 'hurt', 'ko'].includes(this.state);
+      }
+
+      get isBlocking() {
+        return this.state === 'block' || this.state === 'crouch';
+      }
+    }
+
+    let game = {
+      active: false,
+      stage: 'academy',
+      difficulty: 'normal',
+      p1: null,
+      cpu: null,
+      projectiles: [],
+      particles: [],
+      floatingTexts: [],
+      round: 1,
+      timer: 99,
+      timerAccum: 0,
+      phase: 'intro', // intro, fight, round_over, match_over
+      phaseTimer: 0,
+      bannerText: '',
+      bannerSub: '',
+      hitstop: 0,
+      shakeTime: 0,
+      shakeIntensity: 0,
+      spacetimeWarp: 0,
+      aiDecisionTimer: 0,
+      aiAction: 'idle'
+    };
+
+    function spawnFloatingText(x, y, text, color = '#ffcc00', size = 20) {
+      game.floatingTexts.push({
+        x, y, text, color, size,
+        vy: -1.6,
+        life: 52,
+        maxLife: 52
+      });
+    }
+
+    function spawnSparks(x, y, color, count = 12, speed = 6) {
+      for (let i = 0; i < count; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const spd = (0.3 + Math.random() * 0.7) * speed;
+        game.particles.push({
+          x, y,
+          vx: Math.cos(angle) * spd,
+          vy: Math.sin(angle) * spd - 1.5,
+          color,
+          size: 3 + Math.random() * 4,
+          life: 22 + Math.random() * 14
+        });
+      }
+    }
+
+    function triggerShake(intensity = 8, frames = 10) {
+      game.shakeIntensity = Math.max(game.shakeIntensity, intensity);
+      game.shakeTime = Math.max(game.shakeTime, frames);
+    }
+
+    function applyHit(attacker, defender, damage, knockbackX, knockbackY, formulaLabel, isHeavy = false) {
+      if (defender.invulnTimer > 0 || defender.state === 'ko') return;
+
+      // Faraday Shield Reflection check!
+      if (defender.faradayShieldTimer > 0) {
+        sfx.playBlock();
+        spawnSparks(defender.x, defender.y - 50, '#22c55e', 16, 7);
+        spawnFloatingText(defender.x, defender.y - 105, '法拉第籠反彈！', '#4ade80', 18);
+        return;
+      }
+
+      const blocked = defender.isBlocking && defender.isGrounded;
+      const finalDmg = blocked ? Math.round(damage * 0.18) : damage;
+
+      defender.hp = Math.max(0, defender.hp - finalDmg);
+      attacker.superMeter = Math.min(100, attacker.superMeter + (blocked ? 5 : (isHeavy ? 18 : 11)));
+      defender.superMeter = Math.min(100, defender.superMeter + (blocked ? 4 : 9));
+
+      if (blocked) {
+        sfx.playBlock();
+        defender.vx = -defender.facing * (knockbackX * 0.45);
+        spawnSparks(defender.x + defender.facing * 18, defender.y - 55, '#38bdf8', 10, 5);
+        spawnFloatingText(defender.x, defender.y - 98, 'GUARD! 防禦', '#38bdf8', 16);
+      } else {
+        sfx.playHit(isHeavy);
+        defender.state = 'hurt';
+        defender.stateTimer = isHeavy ? 18 : 12;
+        defender.vx = attacker.facing * knockbackX;
+        if (knockbackY !== 0) defender.vy = knockbackY;
+
+        attacker.comboCount++;
+        attacker.comboTimer = 75;
+
+        game.hitstop = isHeavy ? 4 : 2;
+        triggerShake(isHeavy ? 10 : 5, isHeavy ? 12 : 6);
+
+        spawnSparks(defender.x, defender.y - 55, attacker.sci.accentColor, isHeavy ? 20 : 12, isHeavy ? 8 : 5);
+        spawnFloatingText(defender.x, defender.y - 105, `${formulaLabel} -${finalDmg}`, '#fde047', isHeavy ? 22 : 18);
+
+        if (attacker.comboCount >= 2) {
+          spawnFloatingText(attacker.x, attacker.y - 125, `${attacker.comboCount} HIT COMBO!`, '#fb7185', 20);
+        }
+      }
+
+      // Check K.O.
+      if (defender.hp <= 0) {
+        defender.state = 'ko';
+        defender.vy = -10;
+        defender.vx = -defender.facing * 9;
+        sfx.playKO();
+        triggerShake(16, 24);
+        game.hitstop = 8;
+        endRound(attacker);
+      }
+    }
+
+    /**
+     * SIGNATURE PHYSICS SPECIAL MOVES (All 9 Scientists!)
+     */
+    function executePhysicsSpecial(fighter, opponent) {
+      const id = fighter.sci.id;
+      const dir = fighter.facing;
+      sfx.playSpecial();
+      spawnFloatingText(fighter.x, fighter.y - 115, fighter.sci.specialName.split(' ')[0] + '!', '#7dd3fc', 19);
+
+      if (id === 'newton') {
+        // Giant Falling Gravity Apple above opponent!
+        game.projectiles.push({
+          type: 'apple',
+          owner: fighter,
+          x: opponent.x,
+          y: 70,
+          vx: dir * 1.5,
+          vy: 2,
+          gravity: 0.65,
+          bounces: 1,
+          radius: 24,
+          damage: 95,
+          knockbackX: 8,
+          knockbackY: -5,
+          formula: 'F = mg!',
+          life: 130
+        });
+      } else if (id === 'huygens') {
+        // Expanding Huygens Semicircular Wavelet
+        game.projectiles.push({
+          type: 'wavelet',
+          owner: fighter,
+          x: fighter.x + dir * 35,
+          y: GROUND_Y - 45,
+          vx: dir * 8.5,
+          vy: 0,
+          radius: 28,
+          damage: 90,
+          knockbackX: 9,
+          knockbackY: -4,
+          formula: 'T=2π√(L/g)',
+          life: 90
+        });
+      } else if (id === 'galileo') {
+        // Telescope Thrust + Dual Free-Fall Spheres (Big & Small fall together!)
+        fighter.vx = dir * 11;
+        [-18, 18].forEach((offset, idx) => {
+          game.projectiles.push({
+            type: 'freefall',
+            owner: fighter,
+            x: opponent.x + offset,
+            y: 60,
+            vx: 0,
+            vy: 3,
+            gravity: 0.72,
+            radius: idx === 0 ? 18 : 10,
+            damage: 50,
+            knockbackX: 6,
+            knockbackY: -3,
+            formula: 'g = 9.8m/s²',
+            life: 95
+          });
+        });
+      } else if (id === 'maxwell') {
+        // Oscillating EM Transverse Wave
+        game.projectiles.push({
+          type: 'em_wave',
+          owner: fighter,
+          x: fighter.x + dir * 40,
+          y: GROUND_Y - 52,
+          vx: dir * 10,
+          vy: 0,
+          radius: 26,
+          damage: 95,
+          knockbackX: 9,
+          knockbackY: -3,
+          formula: '∇×E = -∂B/∂t',
+          life: 95
+        });
+      } else if (id === 'faraday') {
+        // Tossed Green Electrolysis Flask that creates an electric puddle
+        game.projectiles.push({
+          type: 'flask',
+          owner: fighter,
+          x: fighter.x + dir * 25,
+          y: GROUND_Y - 65,
+          vx: dir * 7.5,
+          vy: -7.5,
+          gravity: 0.55,
+          radius: 20,
+          damage: 90,
+          knockbackX: 7,
+          knockbackY: -5,
+          formula: 'Q = I·t!',
+          life: 110
+        });
+      } else if (id === 'planck') {
+        // 3 Discrete Energy Quanta Packets (E = hv)
+        [0, 1, 2].forEach(i => {
+          setTimeout(() => {
+            if (!game.active || fighter.state === 'ko') return;
+            game.projectiles.push({
+              type: 'quanta',
+              owner: fighter,
+              x: fighter.x + dir * 35,
+              y: GROUND_Y - 45 - i * 14,
+              vx: dir * (10 + i),
+              vy: 0,
+              radius: 15,
+              damage: 36,
+              knockbackX: 5,
+              knockbackY: 0,
+              formula: 'E = hν!',
+              life: 85
+            });
+          }, i * 95);
+        });
+      } else if (id === 'einstein') {
+        // Instant Photoelectric Photon Laser Beam
+        game.projectiles.push({
+          type: 'photon_beam',
+          owner: fighter,
+          x: fighter.x + dir * 35,
+          y: GROUND_Y - 56,
+          vx: dir * 16,
+          vy: 0,
+          radius: 22,
+          damage: 95,
+          knockbackX: 10,
+          knockbackY: -3,
+          formula: 'E_k = hν - W',
+          life: 65
+        });
+      } else if (id === 'bohr') {
+        // Quantum Jump Teleport behind/near opponent + Orbiting Electron Strike!
+        spawnSparks(fighter.x, fighter.y - 50, '#38bdf8', 16, 6);
+        fighter.x = Math.max(80, Math.min(ARENA_W - 80, opponent.x - dir * 85));
+        fighter.facing = opponent.x >= fighter.x ? 1 : -1;
+        spawnSparks(fighter.x, fighter.y - 50, '#facc15', 16, 6);
+        game.projectiles.push({
+          type: 'electron_orb',
+          owner: fighter,
+          x: fighter.x + fighter.facing * 45,
+          y: GROUND_Y - 50,
+          vx: fighter.facing * 6,
+          vy: 0,
+          radius: 30,
+          damage: 92,
+          knockbackX: 8,
+          knockbackY: -4,
+          formula: 'ΔE = E₂-E₁',
+          life: 45
+        });
+      } else if (id === 'feynman') {
+        // Zig-Zag Virtual Photon along Feynman Diagram
+        game.projectiles.push({
+          type: 'feynman_zigzag',
+          owner: fighter,
+          x: fighter.x + dir * 35,
+          y: GROUND_Y - 52,
+          baseY: GROUND_Y - 52,
+          vx: dir * 9.5,
+          vy: 0,
+          radius: 22,
+          damage: 92,
+          knockbackX: 8,
+          knockbackY: -3,
+          formula: 'QED 虛光子!',
+          life: 95
+        });
+      }
+    }
+
+    /**
+     * ULTIMATE EQUATION SUPER MOVES (Requires 100% Super Meter)
+     */
+    function executeEquationSuper(fighter, opponent) {
+      fighter.superMeter = 0;
+      fighter.invulnTimer = 45;
+      const id = fighter.sci.id;
+      const dir = fighter.facing;
+
+      sfx.playSuper();
+      game.hitstop = 10;
+      triggerShake(14, 24);
+      spawnFloatingText(fighter.x, fighter.y - 130, `★ 超必殺：${fighter.sci.formula} ★`, '#facc15', 24);
+
+      if (id === 'newton') {
+        // Rainbow Prism Beam + F=ma High-Acceleration Dash!
+        game.projectiles.push({
+          type: 'prism_rainbow',
+          owner: fighter,
+          x: fighter.x + dir * 40,
+          y: GROUND_Y - 55,
+          vx: dir * 15,
+          vy: 0,
+          radius: 46,
+          damage: 230,
+          knockbackX: 16,
+          knockbackY: -9,
+          formula: 'F = ma 終極衝擊!',
+          life: 70
+        });
+        fighter.vx = dir * 18;
+      } else if (id === 'huygens') {
+        // Multi-ring Isochronous Resonance Tsunami
+        [0, 1, 2].forEach(i => {
+          setTimeout(() => {
+            if (!game.active) return;
+            game.projectiles.push({
+              type: 'wavelet',
+              owner: fighter,
+              x: fighter.x + dir * (40 + i * 35),
+              y: GROUND_Y - 50,
+              vx: dir * (11 + i),
+              vy: 0,
+              radius: 48,
+              damage: 85,
+              knockbackX: 11,
+              knockbackY: -7,
+              formula: 'T = 2π√(L/g)!!',
+              life: 90
+            });
+          }, i * 110);
+        });
+      } else if (id === 'galileo') {
+        // Inertial Reference Frame Blitz + Meteor Shower of Weights
+        fighter.vx = dir * 20;
+        for (let i = 0; i < 5; i++) {
+          game.projectiles.push({
+            type: 'freefall',
+            owner: fighter,
+            x: opponent.x - 100 + i * 50,
+            y: 40 - i * 25,
+            vx: 0,
+            vy: 6,
+            gravity: 0.85,
+            radius: 22,
+            damage: 55,
+            knockbackX: 8,
+            knockbackY: -6,
+            formula: '慣性定律!',
+            life: 100
+          });
+        }
+      } else if (id === 'maxwell') {
+        // 4 Equations Electromagnetic Storm around opponent
+        game.projectiles.push({
+          type: 'em_storm',
+          owner: fighter,
+          x: opponent.x,
+          y: GROUND_Y - 70,
+          vx: 0,
+          vy: 0,
+          radius: 75,
+          damage: 240,
+          knockbackX: 14,
+          knockbackY: -10,
+          formula: '∇·E=0 ∇×B=μJ!',
+          life: 65
+        });
+      } else if (id === 'faraday') {
+        // Faraday Cage Shield + Induction Coil Lightning Bolt on Opponent
+        fighter.faradayShieldTimer = 240; // 4 seconds projectile immunity!
+        game.projectiles.push({
+          type: 'induction_bolt',
+          owner: fighter,
+          x: opponent.x,
+          y: GROUND_Y - 80,
+          vx: 0,
+          vy: 0,
+          radius: 65,
+          damage: 235,
+          knockbackX: 13,
+          knockbackY: -10,
+          formula: 'ε = -dΦ_B/dt!',
+          life: 55
+        });
+      } else if (id === 'planck') {
+        // Giant Blackbody Radiation Curve Surge
+        game.projectiles.push({
+          type: 'blackbody_wave',
+          owner: fighter,
+          x: fighter.x + dir * 50,
+          y: GROUND_Y - 60,
+          vx: dir * 12,
+          vy: 0,
+          radius: 58,
+          damage: 240,
+          knockbackX: 16,
+          knockbackY: -9,
+          formula: 'E = hν 量子爆發!',
+          life: 85
+        });
+      } else if (id === 'einstein') {
+        // Spacetime Curvature Gravity Well + E=mc² Explosion!
+        game.spacetimeWarp = 65;
+        opponent.x += (fighter.x + dir * 110 - opponent.x) * 0.65;
+        game.projectiles.push({
+          type: 'emc2_blast',
+          owner: fighter,
+          x: fighter.x + dir * 115,
+          y: GROUND_Y - 60,
+          vx: 0,
+          vy: 0,
+          radius: 85,
+          damage: 260,
+          knockbackX: 18,
+          knockbackY: -11,
+          formula: 'E = mc²!!',
+          life: 55
+        });
+      } else if (id === 'bohr') {
+        // Expanding Bohr Atomic Orbital Nova
+        game.projectiles.push({
+          type: 'bohr_nova',
+          owner: fighter,
+          x: fighter.x + dir * 60,
+          y: GROUND_Y - 65,
+          vx: dir * 7,
+          vy: 0,
+          radius: 75,
+          damage: 240,
+          knockbackX: 15,
+          knockbackY: -9,
+          formula: '波耳原子軌域!',
+          life: 70
+        });
+      } else if (id === 'feynman') {
+        // Path Integral Phantom Multi-Clone Rush
+        fighter.vx = dir * 19;
+        [-1, 0, 1].forEach((offset, idx) => {
+          game.projectiles.push({
+            type: 'feynman_zigzag',
+            owner: fighter,
+            x: opponent.x + offset * 45,
+            y: GROUND_Y - 55 - idx * 15,
+            baseY: GROUND_Y - 55,
+            vx: dir * 4,
+            vy: 0,
+            radius: 42,
+            damage: 85,
+            knockbackX: 12,
+            knockbackY: -8,
+            formula: '路徑積分 QED!',
+            life: 60
+          });
+        });
+      }
+    }
+
+    /**
+     * AI CONTROLLER (Supports Easy / Normal / Hard Nobel Laureate)
+     */
+    function updateAI(ai, player) {
+      if (ai.isBusy || game.phase !== 'fight') return;
+
+      game.aiDecisionTimer--;
+      const dist = Math.abs(player.x - ai.x);
+      ai.facing = player.x >= ai.x ? 1 : -1;
+
+      if (game.aiDecisionTimer <= 0) {
+        const rates = { easy: 26, normal: 15, hard: 8 };
+        game.aiDecisionTimer = rates[game.difficulty] || 15;
+
+        const r = Math.random();
+        // Use Super if full!
+        if (ai.superMeter >= 100 && r < (game.difficulty === 'easy' ? 0.25 : 0.65)) {
+          game.aiAction = 'super';
+          return;
+        }
+
+        // React to incoming projectiles
+        const incomingProj = game.projectiles.find(p => p.owner === player && Math.abs(p.x - ai.x) < 160);
+        if (incomingProj && r < (game.difficulty === 'hard' ? 0.75 : 0.35)) {
+          game.aiAction = Math.random() < 0.5 ? 'block' : 'jump';
+          return;
+        }
+
+        if (dist > 260) {
+          if (r < 0.55) game.aiAction = 'approach';
+          else if (r < 0.85) game.aiAction = 'special';
+          else game.aiAction = 'jump_forward';
+        } else if (dist > 115) {
+          if (r < 0.45) game.aiAction = 'approach';
+          else if (r < 0.75) game.aiAction = 'special';
+          else if (r < 0.9) game.aiAction = 'heavy';
+          else game.aiAction = 'block';
+        } else {
+          // Close combat range
+          if (player.isBusy && r < (game.difficulty === 'hard' ? 0.7 : 0.35)) {
+            game.aiAction = 'block';
+          } else if (r < 0.42) {
+            game.aiAction = 'light';
+          } else if (r < 0.72) {
+            game.aiAction = 'heavy';
+          } else if (r < 0.9) {
+            game.aiAction = 'special';
+          } else {
+            game.aiAction = 'retreat';
+          }
+        }
+      }
+
+      const moveSpeed = 3.5 + (ai.sci.speed / 100) * 2.2;
+
+      switch (game.aiAction) {
+        case 'approach':
+          ai.state = 'walk';
+          ai.vx = ai.facing * moveSpeed;
+          break;
+        case 'retreat':
+          ai.state = 'walk';
+          ai.vx = -ai.facing * moveSpeed * 0.85;
+          break;
+        case 'jump':
+          if (ai.isGrounded) {
+            ai.vy = -14.5;
+            ai.state = 'jump';
+          }
+          game.aiAction = 'idle';
+          break;
+        case 'jump_forward':
+          if (ai.isGrounded) {
+            ai.vy = -14.5;
+            ai.vx = ai.facing * moveSpeed * 1.1;
+            ai.state = 'jump';
+          }
+          game.aiAction = 'idle';
+          break;
+        case 'block':
+          ai.state = 'block';
+          ai.vx = 0;
+          break;
+        case 'light':
+          startAttack(ai, 'light', 14);
+          game.aiAction = 'idle';
+          break;
+        case 'heavy':
+          startAttack(ai, 'heavy', 22);
+          game.aiAction = 'idle';
+          break;
+        case 'special':
+          startAttack(ai, 'special', 26);
+          executePhysicsSpecial(ai, player);
+          game.aiAction = 'idle';
+          break;
+        case 'super':
+          startAttack(ai, 'super', 32);
+          executeEquationSuper(ai, player);
+          game.aiAction = 'idle';
+          break;
+        default:
+          if (ai.isGrounded) {
+            ai.state = 'idle';
+            ai.vx *= 0.7;
+          }
+      }
+    }
+
+    function startAttack(fighter, type, duration) {
+      fighter.state = type;
+      fighter.stateTimer = duration;
+      fighter.hitRegistered = false;
+      if (type === 'light' || type === 'heavy') {
+        sfx.playSwing();
+      }
+    }
+
+    /**
+     * PLAYER INPUT & FIGHTER PHYSICS UPDATE
+     */
+    function updatePlayerInput(p1, cpu) {
+      if (game.phase !== 'fight' || p1.state === 'hurt' || p1.state === 'ko') return;
+
+      // Allow canceling Light/Heavy into Special or Super (Street Fighter Combo Cancel!)
+      const canCancel = (p1.state === 'light' || p1.state === 'heavy') && p1.hitRegistered;
+
+      if ((justPressed['KeyU'] || justPressed['Space']) && p1.superMeter >= 100 && (!p1.isBusy || canCancel)) {
+        startAttack(p1, 'super', 32);
+        executeEquationSuper(p1, cpu);
+        return;
+      }
+
+      if (justPressed['KeyL'] && (!p1.isBusy || canCancel)) {
+        startAttack(p1, 'special', 26);
+        executePhysicsSpecial(p1, cpu);
+        return;
+      }
+
+      if (justPressed['KeyK'] && (!p1.isBusy || (p1.state === 'light' && p1.hitRegistered))) {
+        startAttack(p1, 'heavy', 22);
+        return;
+      }
+
+      if (justPressed['KeyJ'] && !p1.isBusy) {
+        startAttack(p1, 'light', 14);
+        return;
+      }
+
+      if (p1.isBusy) return;
+
+      // Auto-face opponent when grounded & idle/walking
+      if (p1.isGrounded) {
+        p1.facing = cpu.x >= p1.x ? 1 : -1;
+      }
+
+      const left = keys['KeyA'] || keys['ArrowLeft'];
+      const right = keys['KeyD'] || keys['ArrowRight'];
+      const up = keys['KeyW'] || keys['ArrowUp'];
+      const down = keys['KeyS'] || keys['ArrowDown'];
+
+      const moveSpeed = 3.8 + (p1.sci.speed / 100) * 2.4;
+
+      if (down && p1.isGrounded) {
+        p1.state = 'crouch';
+        p1.vx = 0;
+        return;
+      }
+
+      if (up && p1.isGrounded) {
+        p1.vy = -15;
+        p1.state = 'jump';
+        if (left) p1.vx = -moveSpeed;
+        else if (right) p1.vx = moveSpeed;
+        return;
+      }
+
+      if (left) {
+        p1.vx = -moveSpeed;
+        if (p1.isGrounded) {
+          // Holding away from opponent acts as Stand Block!
+          p1.state = (p1.facing === 1 && cpu.isBusy) ? 'block' : 'walk';
+        }
+      } else if (right) {
+        p1.vx = moveSpeed;
+        if (p1.isGrounded) {
+          p1.state = (p1.facing === -1 && cpu.isBusy) ? 'block' : 'walk';
+        }
+      } else {
+        p1.vx *= 0.72;
+        if (p1.isGrounded) p1.state = 'idle';
+      }
+    }
+
+    function updateFighterPhysics(f, other) {
+      f.animTime += 0.016;
+      if (f.invulnTimer > 0) f.invulnTimer--;
+      if (f.faradayShieldTimer > 0) f.faradayShieldTimer--;
+      if (f.comboTimer > 0) {
+        f.comboTimer--;
+        if (f.comboTimer === 0) f.comboCount = 0;
+      }
+
+      // Smoothly drain yellow/white trailing health bar
+      if (f.displayHp > f.hp) {
+        f.displayHp = Math.max(f.hp, f.displayHp - 6);
+      }
+
+      // State Timer Countdown
+      if (f.stateTimer > 0) {
+        f.stateTimer--;
+        if (f.stateTimer === 0 && f.state !== 'ko') {
+          f.state = f.isGrounded ? 'idle' : 'jump';
+          f.hitRegistered = false;
+        }
+      }
+
+      // Melee Hitbox Checks (Light & Heavy Attacks)
+      if ((f.state === 'light' || f.state === 'heavy') && !f.hitRegistered) {
+        const activeFrame = f.state === 'light' ? 9 : 14;
+        if (f.stateTimer <= activeFrame && f.stateTimer >= activeFrame - 4) {
+          const reach = f.state === 'light' ? 88 : 112;
+          const dx = (other.x - f.x) * f.facing;
+          const dy = Math.abs(other.y - f.y);
+          if (dx > -15 && dx <= reach && dy < 75) {
+            f.hitRegistered = true;
+            const powerMult = 0.85 + (f.sci.power / 100) * 0.35;
+            if (f.state === 'light') {
+              applyHit(f, other, Math.round(48 * powerMult), 5, 0, '動量 p=mv', false);
+            } else {
+              applyHit(f, other, Math.round(85 * powerMult), 10, -4.5, '衝量 J=FΔt', true);
+            }
+          }
+        }
+      }
+
+      // Integrate Velocity & Gravity
+      f.x += f.vx;
+      f.y += f.vy;
+
+      if (!f.isGrounded) {
+        f.vy += GRAVITY;
+      }
+
+      if (f.y >= GROUND_Y) {
+        f.y = GROUND_Y;
+        f.vy = 0;
+        if (f.state === 'jump') f.state = 'idle';
+      }
+
+      // Arena Boundaries
+      f.x = Math.max(55, Math.min(ARENA_W - 55, f.x));
+
+      // Prevent fighters from overlapping completely on ground
+      const minSep = 54;
+      const dist = Math.abs(f.x - other.x);
+      if (dist < minSep && Math.abs(f.y - other.y) < 55 && f.state !== 'ko' && other.state !== 'ko') {
+        const push = (minSep - dist) * 0.5;
+        if (f.x <= other.x) {
+          f.x -= push;
+          other.x += push;
+        } else {
+          f.x += push;
+          other.x -= push;
+        }
+      }
+    }
+
+    function updateProjectiles() {
+      for (let i = game.projectiles.length - 1; i >= 0; i--) {
+        const p = game.projectiles[i];
+        p.life--;
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.gravity) p.vy += p.gravity;
+
+        // Special projectile behaviors
+        if (p.type === 'apple' && p.y >= GROUND_Y - 18 && p.bounces > 0) {
+          p.y = GROUND_Y - 18;
+          p.vy = -10;
+          p.vx = p.owner.facing * 5.5;
+          p.bounces--;
+          spawnSparks(p.x, GROUND_Y, '#ef4444', 8, 4);
+        } else if (p.type === 'flask' && p.y >= GROUND_Y - 12) {
+          // Explode into stationary green electric puddle!
+          p.y = GROUND_Y - 15;
+          p.vx = 0;
+          p.vy = 0;
+          p.gravity = 0;
+          p.radius = 45;
+          p.type = 'electric_puddle';
+          spawnSparks(p.x, GROUND_Y - 10, '#22c55e', 16, 6);
+        } else if (p.type === 'feynman_zigzag') {
+          p.y = p.baseY + Math.sin(p.life * 0.45) * 24;
+        } else if (p.type === 'wavelet') {
+          p.radius = Math.min(68, p.radius + 0.35);
+        }
+
+        // Collision with opponent
+        const target = p.owner === game.p1 ? game.cpu : game.p1;
+        const dx = target.x - p.x;
+        const dy = (target.y - 48) - p.y;
+        const hitDist = p.radius + 26;
+
+        if (dx * dx + dy * dy <= hitDist * hitDist) {
+          applyHit(p.owner, target, p.damage, p.knockbackX, p.knockbackY, p.formula, p.damage >= 120);
+          game.projectiles.splice(i, 1);
+          continue;
+        }
+
+        if (p.life <= 0 || p.x < -80 || p.x > ARENA_W + 80 || p.y > GROUND_Y + 30) {
+          game.projectiles.splice(i, 1);
+        }
+      }
+    }
+
+    function updateParticlesAndText() {
+      for (let i = game.particles.length - 1; i >= 0; i--) {
+        const pt = game.particles[i];
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.vy += 0.25;
+        pt.life--;
+        if (pt.life <= 0) game.particles.splice(i, 1);
+      }
+      for (let i = game.floatingTexts.length - 1; i >= 0; i--) {
+        const ft = game.floatingTexts[i];
+        ft.y += ft.vy;
+        ft.life--;
+        if (ft.life <= 0) game.floatingTexts.splice(i, 1);
+      }
+    }
+
+    /**
+     * ROUND & MATCH FLOW MANAGEMENT
+     */
+    function startMatch() {
+      sfx.playConfirm();
+      game.stage = document.getElementById('stage-select').value;
+      game.difficulty = document.getElementById('difficulty-select').value;
+      game.p1 = new Fighter(SCIENTISTS[p1Index], true, 240);
+      game.cpu = new Fighter(SCIENTISTS[cpuIndex], false, 760);
+      game.round = 1;
+      game.active = true;
+
+      document.getElementById('select-screen').classList.add('hidden');
+      document.getElementById('arena-screen').classList.remove('hidden');
+      document.getElementById('btn-back-select').classList.remove('hidden');
+      document.getElementById('match-overlay').classList.add('hidden');
+
+      beginRound();
+    }
+
+    function beginRound() {
+      game.p1.resetForRound(240, 1);
+      game.cpu.resetForRound(760, -1);
+      game.projectiles = [];
+      game.particles = [];
+      game.floatingTexts = [];
+      game.timer = 99;
+      game.timerAccum = 0;
+      game.spacetimeWarp = 0;
+      game.phase = 'intro';
+      game.phaseTimer = 85;
+      game.bannerText = game.round === 3 ? 'FINAL ROUND' : `ROUND ${game.round}`;
+      game.bannerSub = '準備應戰！';
+      sfx.playSelect();
+    }
+
+    function endRound(winner) {
+      if (game.phase !== 'fight') return;
+      game.phase = 'round_over';
+      game.phaseTimer = 115;
+
+      if (winner) {
+        winner.roundsWon++;
+        game.bannerText = winner.hp === winner.maxHp ? 'PERFECT K.O.!' : 'K.O.!';
+        game.bannerSub = `${winner.sci.name} 獲勝！`;
+      } else {
+        // Time Over decision
+        if (game.p1.hp >= game.cpu.hp) {
+          game.p1.roundsWon++;
+          game.bannerText = 'TIME OVER';
+          game.bannerSub = `${game.p1.sci.name} 判定勝！`;
+        } else {
+          game.cpu.roundsWon++;
+          game.bannerText = 'TIME OVER';
+          game.bannerSub = `${game.cpu.sci.name} 判定勝！`;
+        }
+      }
+    }
+
+    function showMatchOverScreen() {
+      game.phase = 'match_over';
+      const overlay = document.getElementById('match-overlay');
+      const titleEl = document.getElementById('match-result-title');
+      const quoteEl = document.getElementById('match-quote');
+
+      const p1Won = game.p1.roundsWon > game.cpu.roundsWon;
+      titleEl.textContent = p1Won ? `🏆 ${game.p1.sci.name} 勝利！(YOU WIN)` : `💥 ${game.cpu.sci.name} 獲勝！(CPU WINS)`;
+      quoteEl.textContent = p1Won ? game.p1.sci.quote : game.cpu.sci.quote;
+      overlay.classList.remove('hidden');
+    }
+
+    /**
+     * 6. ARENA RENDERING (Stages, HUD, Projectiles, Fighters)
+     */
+    function drawStageBackground() {
+      if (game.stage === 'academy') {
+        // European Stone Courtyard & Blue Windows (Matching Reference Image!)
+        const grad = ctx.createLinearGradient(0, 0, 0, GROUND_Y);
+        grad.addColorStop(0, '#c89f72');
+        grad.addColorStop(1, '#9e764a');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, ARENA_W, GROUND_Y);
+
+        // Stone block lines
+        ctx.strokeStyle = 'rgba(70, 45, 20, 0.25)';
+        ctx.lineWidth = 2;
+        for (let y = 40; y < GROUND_Y; y += 45) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(ARENA_W, y);
+          ctx.stroke();
+        }
+
+        // 3 Arched Windows with Blue Shutters in Background
+        [180, 500, 820].forEach((wx, idx) => {
+          // Shutters
+          ctx.fillStyle = '#256d8c';
+          ctx.fillRect(wx - 82, 115, 22, 175);
+          ctx.fillRect(wx + 60, 115, 22, 175);
+          // Chalkboard Window
+          ctx.fillStyle = '#18221e';
+          ctx.beginPath();
+          ctx.roundRect(wx - 58, 105, 116, 185, [55, 55, 4, 4]);
+          ctx.fill();
+          ctx.strokeStyle = '#e5c697';
+          ctx.lineWidth = 5;
+          ctx.stroke();
+
+          // Chalkboard physics formulas
+          ctx.fillStyle = 'rgba(255,255,255,0.65)';
+          ctx.font = 'bold 16px "Chakra Petch", sans-serif';
+          ctx.textAlign = 'center';
+          const eqs = ['F = ma', 'E = mc²', 'E = hν'];
+          ctx.fillText(eqs[idx], wx, 185);
+        });
+
+        // Cobblestone Floor
+        const floorGrad = ctx.createLinearGradient(0, GROUND_Y, 0, ARENA_H);
+        floorGrad.addColorStop(0, '#6e5842');
+        floorGrad.addColorStop(1, '#3b2e22');
+        ctx.fillStyle = floorGrad;
+        ctx.fillRect(0, GROUND_Y, ARENA_W, ARENA_H - GROUND_Y);
+      } else if (game.stage === 'chalkboard') {
+        // Giant Physics Lecture Hall Chalkboard
+        ctx.fillStyle = '#16241e';
+        ctx.fillRect(0, 0, ARENA_W, GROUND_Y);
+
+        // Wooden Chalkboard Frame
+        ctx.strokeStyle = '#784b26';
+        ctx.lineWidth = 14;
+        ctx.strokeRect(7, 7, ARENA_W - 14, GROUND_Y - 7);
+
+        // Hand-drawn chalk diagrams & equations
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.22)';
+        ctx.font = 'bold 20px "Chakra Petch", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('∇·E = ρ/ε₀    ∇·B = 0', 65, 130);
+        ctx.fillText('∇×E = -∂B/∂t   T = 2π√(L/g)', 65, 170);
+        ctx.fillText('iℏ ∂ψ/∂t = Ĥψ   E = mc²', 630, 140);
+
+        // Chalk Bohr Atom & Spacetime Grid Sketches
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.16)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.ellipse(500, 240, 95, 35, 0.4, 0, Math.PI * 2);
+        ctx.ellipse(500, 240, 95, 35, -0.4, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Hardwood Lab Floor
+        ctx.fillStyle = '#4a321d';
+        ctx.fillRect(0, GROUND_Y, ARENA_W, ARENA_H - GROUND_Y);
+      } else {
+        // Quantum Spacetime Rift Stage
+        const spaceGrad = ctx.createRadialGradient(ARENA_W / 2, 230, 40, ARENA_W / 2, 230, 560);
+        spaceGrad.addColorStop(0, '#311042');
+        spaceGrad.addColorStop(0.5, '#131836');
+        spaceGrad.addColorStop(1, '#070913');
+        ctx.fillStyle = spaceGrad;
+        ctx.fillRect(0, 0, ARENA_W, GROUND_Y);
+
+        // Warped Spacetime Perspective Grid Floor
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, GROUND_Y, ARENA_W, ARENA_H - GROUND_Y);
+
+        ctx.strokeStyle = game.spacetimeWarp > 0 ? '#f43f5e' : 'rgba(56, 189, 248, 0.35)';
+        ctx.lineWidth = 2;
+        for (let x = 0; x <= ARENA_W; x += 62.5) {
+          ctx.beginPath();
+          ctx.moveTo(x, GROUND_Y);
+          ctx.lineTo(ARENA_W / 2 + (x - ARENA_W / 2) * 1.45, ARENA_H);
+          ctx.stroke();
+        }
+        [GROUND_Y + 25, GROUND_Y + 55, GROUND_Y + 85].forEach(gy => {
+          ctx.beginPath();
+          ctx.moveTo(0, gy);
+          ctx.lineTo(ARENA_W, gy);
+          ctx.stroke();
+        });
+      }
+
+      // Ground Horizon Highlight Line
+      ctx.strokeStyle = 'rgba(255, 220, 130, 0.45)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.moveTo(0, GROUND_Y);
+      ctx.lineTo(ARENA_W, GROUND_Y);
+      ctx.stroke();
+    }
+
+    function drawProjectiles() {
+      game.projectiles.forEach(p => {
+        ctx.save();
+        ctx.translate(p.x, p.y);
+
+        if (p.type === 'apple') {
+          ctx.fillStyle = '#ef4444';
+          ctx.beginPath();
+          ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#7f1d1d';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+          ctx.fillStyle = '#22c55e';
+          ctx.fillRect(-3, -p.radius - 7, 10, 6);
+        } else if (p.type === 'prism_rainbow') {
+          const colors = ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6', '#8b5cf6'];
+          colors.forEach((c, idx) => {
+            ctx.fillStyle = c;
+            ctx.fillRect(-55, -36 + idx * 12, 110, 12);
+          });
+        } else if (p.type === 'wavelet') {
+          ctx.strokeStyle = '#38bdf8';
+          ctx.lineWidth = 5;
+          ctx.beginPath();
+          ctx.arc(0, 0, p.radius, -Math.PI * 0.45, Math.PI * 0.45);
+          ctx.stroke();
+          ctx.strokeStyle = '#fde047';
+          ctx.lineWidth = 2.5;
+          ctx.beginPath();
+          ctx.arc(0, 0, p.radius * 0.65, -Math.PI * 0.45, Math.PI * 0.45);
+          ctx.stroke();
+        } else if (p.type === 'freefall') {
+          ctx.fillStyle = '#334155';
+          ctx.beginPath();
+          ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#cbd5e1';
+          ctx.lineWidth = 2;
+          ctx.stroke();
+        } else if (p.type === 'em_wave') {
+          ctx.strokeStyle = '#facc15';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          for (let wx = -35; wx <= 35; wx += 5) {
+            const wy = Math.sin((wx + p.life * 8) * 0.14) * 20;
+            if (wx === -35) ctx.moveTo(wx, wy);
+            else ctx.lineTo(wx, wy);
+          }
+          ctx.stroke();
+        } else if (p.type === 'flask' || p.type === 'electric_puddle') {
+          ctx.fillStyle = 'rgba(34, 197, 94, 0.45)';
+          ctx.beginPath();
+          ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = '#86efac';
+          ctx.lineWidth = 3;
+          ctx.stroke();
+        } else if (p.type === 'quanta' || p.type === 'photon_beam') {
+          ctx.fillStyle = p.type === 'quanta' ? '#f59e0b' : '#a855f7';
+          ctx.beginPath();
+          ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.arc(0, 0, p.radius * 0.45, 0, Math.PI * 2);
+          ctx.fill();
+        } else if (p.type === 'feynman_zigzag') {
+          ctx.strokeStyle = '#fb7185';
+          ctx.lineWidth = 4;
+          ctx.beginPath();
+          ctx.moveTo(-25, 0);
+          ctx.lineTo(-12, -14);
+          ctx.lineTo(0, 14);
+          ctx.lineTo(12, -14);
+          ctx.lineTo(25, 0);
+          ctx.stroke();
+        } else {
+          // Super Nova / Storm / Blast
+          const grad = ctx.createRadialGradient(0, 0, 6, 0, 0, p.radius);
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(0.5, '#facc15');
+          grad.addColorStop(1, 'rgba(239, 68, 68, 0)');
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(0, 0, p.radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        ctx.restore();
+      });
+    }
+
+    function drawArcadeHUD() {
+      const p1 = game.p1;
+      const cpu = game.cpu;
+
+      // Top Bar Background Strip
+      ctx.fillStyle = 'rgba(12, 10, 9, 0.72)';
+      ctx.fillRect(0, 0, ARENA_W, 82);
+
+      // --- P1 HEALTH BAR (Left) ---
+      const barW = 370;
+      const barH = 24;
+      const p1X = 76;
+      const barY = 22;
+
+      // Portrait Frame P1
+      ctx.fillStyle = '#1c1917';
+      ctx.strokeStyle = '#facc15';
+      ctx.lineWidth = 3;
+      ctx.fillRect(14, 12, 54, 54);
+      ctx.strokeRect(14, 12, 54, 54);
+      drawPhysicistAvatar(ctx, p1.sci, { x: 41, y: 78, scale: 0.62, facing: 1, portraitMode: true });
+
+      // HP Track P1
+      ctx.fillStyle = '#450a0a';
+      ctx.fillRect(p1X, barY, barW, barH);
+      // Trailing Damage Bar
+      ctx.fillStyle = '#ffffff';
+      const p1TrailW = (p1.displayHp / p1.maxHp) * barW;
+      ctx.fillRect(p1X + (barW - p1TrailW), barY, p1TrailW, barH);
+      // Active HP Gradient
+      const p1HpW = (p1.hp / p1.maxHp) * barW;
+      const hpGrad1 = ctx.createLinearGradient(p1X, barY, p1X + barW, barY);
+      hpGrad1.addColorStop(0, p1.hp < 250 ? '#ef4444' : '#eab308');
+      hpGrad1.addColorStop(1, '#fde047');
+      ctx.fillStyle = hpGrad1;
+      ctx.fillRect(p1X + (barW - p1HpW), barY, p1HpW, barH);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(p1X, barY, barW, barH);
+
+      // Name & Round Orbs P1
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 16px "Noto Sans TC", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(`${p1.sci.name} (${p1.sci.formula})`, p1X, 66);
+
+      [0, 1].forEach(r => {
+        ctx.fillStyle = r < p1.roundsWon ? '#facc15' : '#292524';
+        ctx.beginPath();
+        ctx.arc(p1X + barW - 10 - r * 22, 60, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#facc15';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      });
+
+      // --- CPU HEALTH BAR (Right) ---
+      const cpuX = ARENA_W - 76 - barW;
+
+      // Portrait Frame CPU
+      ctx.fillStyle = '#1c1917';
+      ctx.strokeStyle = '#ef4444';
+      ctx.lineWidth = 3;
+      ctx.fillRect(ARENA_W - 68, 12, 54, 54);
+      ctx.strokeRect(ARENA_W - 68, 12, 54, 54);
+      drawPhysicistAvatar(ctx, cpu.sci, { x: ARENA_W - 41, y: 78, scale: 0.62, facing: -1, portraitMode: true });
+
+      // HP Track CPU
+      ctx.fillStyle = '#450a0a';
+      ctx.fillRect(cpuX, barY, barW, barH);
+      ctx.fillStyle = '#ffffff';
+      const cpuTrailW = (cpu.displayHp / cpu.maxHp) * barW;
+      ctx.fillRect(cpuX, barY, cpuTrailW, barH);
+      const cpuHpW = (cpu.hp / cpu.maxHp) * barW;
+      const hpGrad2 = ctx.createLinearGradient(cpuX, barY, cpuX + barW, barY);
+      hpGrad2.addColorStop(0, '#fde047');
+      hpGrad2.addColorStop(1, cpu.hp < 250 ? '#ef4444' : '#eab308');
+      ctx.fillStyle = hpGrad2;
+      ctx.fillRect(cpuX, barY, cpuHpW, barH);
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(cpuX, barY, barW, barH);
+
+      // Name & Round Orbs CPU
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '900 16px "Noto Sans TC", sans-serif';
+      ctx.textAlign = 'right';
+      ctx.fillText(`(${cpu.sci.formula}) ${cpu.sci.name}`, cpuX + barW, 66);
+
+      [0, 1].forEach(r => {
+        ctx.fillStyle = r < cpu.roundsWon ? '#ef4444' : '#292524';
+        ctx.beginPath();
+        ctx.arc(cpuX + 10 + r * 22, 60, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+      });
+
+      // --- CENTER COUNTDOWN TIMER ---
+      ctx.fillStyle = game.timer <= 15 ? '#ef4444' : '#facc15';
+      ctx.font = '900 32px "Press Start 2P", monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText(String(Math.ceil(game.timer)).padStart(2, '0'), ARENA_W / 2, 52);
+
+      // --- BOTTOM SUPER COMBO GAUGES ---
+      const superW = 310;
+      const superH = 16;
+      const superY = ARENA_H - 28;
+
+      // P1 Super Bar
+      ctx.fillStyle = '#1c1917';
+      ctx.fillRect(24, superY, superW, superH);
+      ctx.fillStyle = p1.superMeter >= 100 ? (Math.floor(Date.now() / 100) % 2 === 0 ? '#facc15' : '#f43f5e') : '#0284c7';
+      ctx.fillRect(24, superY, (p1.superMeter / 100) * superW, superH);
+      ctx.strokeStyle = '#94a3b8';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(24, superY, superW, superH);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 12px "Chakra Petch", sans-serif';
+      ctx.textAlign = 'left';
+      ctx.fillText(p1.superMeter >= 100 ? '★ 量子超必殺 MAX! [按 U / Space] ★' : `量子能量 ${Math.floor(p1.superMeter)}%`, 28, superY - 5);
+
+      // CPU Super Bar
+      const cpuSuperX = ARENA_W - 24 - superW;
+      ctx.fillStyle = '#1c1917';
+      ctx.fillRect(cpuSuperX, superY, superW, superH);
+      ctx.fillStyle = cpu.superMeter >= 100 ? '#f43f5e' : '#0284c7';
+      const cpuSFill = (cpu.superMeter / 100) * superW;
+      ctx.fillRect(cpuSuperX + (superW - cpuSFill), superY, cpuSFill, superH);
+      ctx.strokeStyle = '#94a3b8';
+      ctx.strokeRect(cpuSuperX, superY, superW, superH);
+      ctx.textAlign = 'right';
+      ctx.fillText(cpu.superMeter >= 100 ? '★ SUPER MAX ★' : `量子能量 ${Math.floor(cpu.superMeter)}%`, cpuSuperX + superW - 4, superY - 5);
+
+      // Update Touch Super Button Glow
+      const superBtn = document.getElementById('btn-super-touch');
+      if (superBtn) {
+        if (p1.superMeter >= 100) superBtn.classList.add('ring-4', 'ring-yellow-300', 'animate-pulse');
+        else superBtn.classList.remove('ring-4', 'ring-yellow-300', 'animate-pulse');
+      }
+
+      // --- CENTER ROUND / FIGHT / K.O. BANNER ---
+      if (game.phase === 'intro' || game.phase === 'round_over') {
+        ctx.save();
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.55)';
+        ctx.fillRect(0, ARENA_H / 2 - 58, ARENA_W, 116);
+
+        ctx.fillStyle = '#facc15';
+        ctx.strokeStyle = '#7f1d1d';
+        ctx.lineWidth = 6;
+        ctx.font = '900 44px "Press Start 2P", "Noto Sans TC", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.strokeText(game.bannerText, ARENA_W / 2, ARENA_H / 2 + 6);
+        ctx.fillText(game.bannerText, ARENA_W / 2, ARENA_H / 2 + 6);
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '900 20px "Noto Sans TC", sans-serif';
+        ctx.fillText(game.bannerSub, ARENA_W / 2, ARENA_H / 2 + 42);
+        ctx.restore();
+      }
+    }
+
+    /**
+     * MAIN 60FPS GAME LOOP
+     */
+    function gameLoop() {
+      if (game.active) {
+        if (game.hitstop > 0) {
+          game.hitstop--;
+        } else {
+          // Phase State Machine
+          if (game.phase === 'intro') {
+            game.phaseTimer--;
+            if (game.phaseTimer === 30) {
+              game.bannerText = 'FIGHT!';
+              game.bannerSub = '物理真理對決開始！';
+              sfx.playConfirm();
+            }
+            if (game.phaseTimer <= 0) {
+              game.phase = 'fight';
+            }
+          } else if (game.phase === 'fight') {
+            game.timerAccum += 0.016;
+            if (game.timerAccum >= 1) {
+              game.timerAccum = 0;
+              game.timer = Math.max(0, game.timer - 1);
+              if (game.timer === 0) {
+                endRound(null);
+              }
+            }
+
+            updatePlayerInput(game.p1, game.cpu);
+            updateAI(game.cpu, game.p1);
+            updateFighterPhysics(game.p1, game.cpu);
+            updateFighterPhysics(game.cpu, game.p1);
+            updateProjectiles();
+          } else if (game.phase === 'round_over') {
+            updateFighterPhysics(game.p1, game.cpu);
+            updateFighterPhysics(game.cpu, game.p1);
+            game.phaseTimer--;
+            if (game.phaseTimer <= 0) {
+              if (game.p1.roundsWon >= 2 || game.cpu.roundsWon >= 2) {
+                showMatchOverScreen();
+              } else {
+                game.round++;
+                beginRound();
+              }
+            }
+          }
+
+          updateParticlesAndText();
+          if (game.spacetimeWarp > 0) game.spacetimeWarp--;
+        }
+
+        // --- RENDER CANVAS ---
+        ctx.save();
+        if (game.shakeTime > 0) {
+          game.shakeTime--;
+          const sx = (Math.random() - 0.5) * game.shakeIntensity * 2;
+          const sy = (Math.random() - 0.5) * game.shakeIntensity * 2;
+          ctx.translate(sx, sy);
+        }
+
+        drawStageBackground();
+
+        // Draw Fighters
+        [game.p1, game.cpu].forEach(f => {
+          drawPhysicistAvatar(ctx, f.sci, {
+            x: f.x,
+            y: f.y,
+            scale: 1.28,
+            facing: f.facing,
+            state: f.state,
+            animTime: f.animTime
+          });
+
+          // Faraday Cage Active Aura
+          if (f.faradayShieldTimer > 0) {
+            ctx.strokeStyle = '#4ade80';
+            ctx.lineWidth = 3;
+            ctx.setLineDash([8, 6]);
+            ctx.strokeRect(f.x - 42, f.y - 135, 84, 138);
+            ctx.setLineDash([]);
+          }
+        });
+
+        drawProjectiles();
+
+        // Draw Particles
+        game.particles.forEach(pt => {
+          ctx.fillStyle = pt.color;
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Draw Floating Physics Formulas & Damage Popups
+        game.floatingTexts.forEach(ft => {
+          ctx.save();
+          ctx.globalAlpha = Math.min(1, ft.life / 20);
+          ctx.font = `900 ${ft.size}px "Chakra Petch", "Noto Sans TC", sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.strokeStyle = '#09090b';
+          ctx.lineWidth = 4;
+          ctx.strokeText(ft.text, ft.x, ft.y);
+          ctx.fillStyle = ft.color;
+          ctx.fillText(ft.text, ft.x, ft.y);
+          ctx.restore();
+        });
+
+        drawArcadeHUD();
+        ctx.restore();
+      }
+
+      // Clear single-frame key triggers
+      for (const k in justPressed) {
+        justPressed[k] = false;
+      }
+
+      requestAnimationFrame(gameLoop);
+    }
+
+    /**
+     * 7. RESPONSIVE CANVAS SIZING & UI EVENT HANDLERS
+     */
+    function resizeCanvas() {
+      canvas.width = ARENA_W;
+      canvas.height = ARENA_H;
+    }
+
+    window.addEventListener('resize', resizeCanvas);
+
+    // Header & Screen Navigation Buttons
+    document.getElementById('btn-sound').addEventListener('click', () => {
+      sfx.muted = !sfx.muted;
+      document.getElementById('sound-icon').textContent = sfx.muted ? '🔇' : '🔊';
+      document.getElementById('sound-label').textContent = sfx.muted ? '已靜音' : '音效開';
+    });
+
+    document.getElementById('btn-movelist').addEventListener('click', () => {
+      sfx.playSelect();
+      document.getElementById('movelist-modal').classList.remove('hidden');
+    });
+
+    document.getElementById('btn-close-movelist').addEventListener('click', () => {
+      sfx.playSelect();
+      document.getElementById('movelist-modal').classList.add('hidden');
+    });
+
+    document.getElementById('btn-random-rival').addEventListener('click', () => {
+      sfx.playSelect();
+      let next = Math.floor(Math.random() * SCIENTISTS.length);
+      if (next === p1Index) next = (next + 1) % SCIENTISTS.length;
+      cpuIndex = next;
+      refreshSelectionVisuals();
+      updateDetailPanel(SCIENTISTS[cpuIndex]);
+    });
+
+    document.getElementById('btn-start-fight').addEventListener('click', startMatch);
+
+    function returnToCharacterSelect() {
+      sfx.playSelect();
+      game.active = false;
+      document.getElementById('arena-screen').classList.add('hidden');
+      document.getElementById('btn-back-select').classList.add('hidden');
+      document.getElementById('match-overlay').classList.add('hidden');
+      document.getElementById('select-screen').classList.remove('hidden');
+    }
+
+    document.getElementById('btn-back-select').addEventListener('click', returnToCharacterSelect);
+    document.getElementById('btn-overlay-select').addEventListener('click', returnToCharacterSelect);
+
+    document.getElementById('btn-rematch').addEventListener('click', () => {
+      document.getElementById('match-overlay').classList.add('hidden');
+      startMatch();
+    });
+
+    document.getElementById('btn-next-challenger').addEventListener('click', () => {
+      cpuIndex = (cpuIndex + 1) % SCIENTISTS.length;
+      if (cpuIndex === p1Index) cpuIndex = (cpuIndex + 1) % SCIENTISTS.length;
+      refreshSelectionVisuals();
+      document.getElementById('match-overlay').classList.add('hidden');
+      startMatch();
+    });
+
+    // Initialize Application on Window Load
+    window.onload = function () {
+      resizeCanvas();
+      buildCharacterGrid();
+      updateDetailPanel(SCIENTISTS[0]);
+      populateMoveListModal();
+      requestAnimationFrame(gameLoop);
+    };
+  </script>
+</body>
+</html>
