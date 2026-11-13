@@ -549,8 +549,8 @@ function G_run(){
 
 /* ---------- 主程式 ---------- */
 const games=[G_pac(),G_tet(),G_apple(),G_gal(),G_snake(),G_mine(),G_pong(),G_inv(),G_2048(),G_run()];
-const NAMES=[['薛丁格小精靈','Schrödinger'],['包立方塊','Pauli'],['牛頓的蘋果','Newton'],['憤怒的伽利略','Galileo'],['熵增蛇','Boltzmann'],['測不準踩地雷','Heisenberg'],['相對論 PONG','Einstein'],['粒子侵略者','Dirac'],['核融合 2048','Bethe'],['光錐跑酷','Minkowski'],['物理炸彈超人','16 LABS'],['物理快打','16 LABS']];
-const EXT={10:'https://yi-hung-bit.github.io/PHYSICS-BOMBER/',11:'https://yi-hung-bit.github.io/physics-fighter/'};
+const NAMES=[['薛丁格小精靈','Schrödinger'],['包立方塊','Pauli'],['牛頓的蘋果','Newton'],['憤怒的伽利略','Galileo'],['熵增蛇','Boltzmann'],['測不準踩地雷','Heisenberg'],['相對論 PONG','Einstein'],['粒子侵略者','Dirac'],['核融合 2048','Bethe'],['光錐跑酷','Minkowski']];
+const EXT={};
 const NG=NAMES.length;
 const DESC=[
  ['鬼魂沒被觀測時是機率雲，靠近才坍縮。','吃掉「觀測者之眼」可以反吃鬼魂。'],
@@ -562,13 +562,11 @@ const DESC=[
  ['每次擊球速度變快，接近光速 c 時','球會長度收縮，還有都卜勒色移。'],
  ['發射正電子 e⁺ 跟電子 e⁻ 湮滅成 γγ，','小心掉下來的 γ 光子。'],
  ['方向鍵讓相同元素相撞融合，','H 一路融合到 Fe，鐵就是終點。'],
- ['A 跳、↓ 蹲，速度越來越快，','但永遠追不上光速。'],
- ['16 位物理學家炸彈人大亂鬥，','按 START 開啟完整版遊戲。'],
- ['選科學家對戰，用物理必殺技擊敗對手。','按 START 開啟完整版遊戲。']];
+ ['A 跳、↓ 蹲，速度越來越快，','但永遠追不上光速。']];
 let mode='menu',sel=0,cur=null,paused=false,frameN=0;
 let hi=[];try{hi=JSON.parse(localStorage.getItem('phys10hi')||'[]')}catch(e){}
 function saveHi(){try{localStorage.setItem('phys10hi',JSON.stringify(hi))}catch(e){}}
-const ML_Y=38,ML_H=13;
+const ML_Y=44,ML_H=14;
 function startGame(){if(EXT[sel]){snd(880,.12);try{window.top.location.href=EXT[sel]}catch(e){location.href=EXT[sel]}return}cur=games[sel];mode='game';paused=false;restart();snd(880,.12,'square',.06,-400);}
 function restart(){cur.overT=0;cur.saved=false;cur.init();}
 function menuUpdate(){
