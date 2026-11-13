@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="zh-Hant"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>物理學家 10 合 1</title>
+<title>物理學家 11 合 1</title>
 <style>
 html,body{margin:0;height:100%;background:#1c1c1c;color:#ddd;font-family:"PingFang TC","Noto Sans TC","Microsoft JhengHei",sans-serif;overscroll-behavior:none}
 body{display:flex;justify-content:center;align-items:flex-start;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
@@ -37,7 +37,7 @@ canvas{display:block;width:100%;height:auto;aspect-ratio:256/240;image-rendering
  <div id="tv"><canvas id="c" width="768" height="720"></canvas></div>
  <div id="pad">
   <div id="dpad"><div class="h"></div><div class="v"></div><div class="c"></div></div>
-  <div id="mid"><div class="lbl">PHYSICIST 10 IN 1</div>
+  <div id="mid"><div class="lbl">PHYSICIST 11 IN 1</div>
    <div class="row"><button class="pill" data-b="select" aria-label="SELECT"></button><button class="pill" data-b="start" aria-label="START"></button></div>
    <div class="names"><span>SELECT</span><span>START</span></div></div>
   <div id="ab"><div class="k"><button class="rb" data-b="b" aria-label="B"></button>B</div><div class="k"><button class="rb" data-b="a" aria-label="A"></button>A</div></div>
@@ -549,7 +549,9 @@ function G_run(){
 
 /* ---------- 主程式 ---------- */
 const games=[G_pac(),G_tet(),G_apple(),G_gal(),G_snake(),G_mine(),G_pong(),G_inv(),G_2048(),G_run()];
-const NAMES=[['薛丁格小精靈','Schrödinger'],['包立方塊','Pauli'],['牛頓的蘋果','Newton'],['憤怒的伽利略','Galileo'],['熵增蛇','Boltzmann'],['測不準踩地雷','Heisenberg'],['相對論 PONG','Einstein'],['粒子侵略者','Dirac'],['核融合 2048','Bethe'],['光錐跑酷','Minkowski']];
+const NAMES=[['薛丁格小精靈','Schrödinger'],['包立方塊','Pauli'],['牛頓的蘋果','Newton'],['憤怒的伽利略','Galileo'],['熵增蛇','Boltzmann'],['測不準踩地雷','Heisenberg'],['相對論 PONG','Einstein'],['粒子侵略者','Dirac'],['核融合 2048','Bethe'],['光錐跑酷','Minkowski'],['物理炸彈超人','16 LABS']];
+const EXT={10:'https://yi-hung-bit.github.io/PHYSICS-BOMBER/'};
+const NG=NAMES.length;
 const DESC=[
  ['鬼魂沒被觀測時是機率雲，靠近才坍縮。','吃掉「觀測者之眼」可以反吃鬼魂。'],
  ['B 翻轉方塊自旋 ↑↓，消行 = 填滿殼層。','一行剛好 5↑5↓ 自旋配對，加分！'],
@@ -560,16 +562,17 @@ const DESC=[
  ['每次擊球速度變快，接近光速 c 時','球會長度收縮，還有都卜勒色移。'],
  ['發射正電子 e⁺ 跟電子 e⁻ 湮滅成 γγ，','小心掉下來的 γ 光子。'],
  ['方向鍵讓相同元素相撞融合，','H 一路融合到 Fe，鐵就是終點。'],
- ['A 跳、↓ 蹲，速度越來越快，','但永遠追不上光速。']];
+ ['A 跳、↓ 蹲，速度越來越快，','但永遠追不上光速。'],
+ ['16 位物理學家炸彈人大亂鬥，','按 START 開啟完整版遊戲。']];
 let mode='menu',sel=0,cur=null,paused=false,frameN=0;
 let hi=[];try{hi=JSON.parse(localStorage.getItem('phys10hi')||'[]')}catch(e){}
 function saveHi(){try{localStorage.setItem('phys10hi',JSON.stringify(hi))}catch(e){}}
-const ML_Y=44,ML_H=14;
-function startGame(){cur=games[sel];mode='game';paused=false;restart();snd(880,.12,'square',.06,-400);}
+const ML_Y=40,ML_H=13;
+function startGame(){if(EXT[sel]){snd(880,.12);try{window.top.location.href=EXT[sel]}catch(e){location.href=EXT[sel]}return}cur=games[sel];mode='game';paused=false;restart();snd(880,.12,'square',.06,-400);}
 function restart(){cur.overT=0;cur.saved=false;cur.init();}
 function menuUpdate(){
-  if(pr('up')){sel=(sel+9)%10;snd(440,.04)}if(pr('down')){sel=(sel+1)%10;snd(440,.04)}
-  if(tapQ){const i=Math.floor((tapQ.y-ML_Y)/ML_H);if(i>=0&&i<10&&tapQ.x>10&&tapQ.x<246){if(i===sel)startGame();else{sel=i;snd(440,.04)}return}}
+  if(pr('up')){sel=(sel+NG-1)%NG;snd(440,.04)}if(pr('down')){sel=(sel+1)%NG;snd(440,.04)}
+  if(tapQ){const i=Math.floor((tapQ.y-ML_Y)/ML_H);if(i>=0&&i<NG&&tapQ.x>10&&tapQ.x<246){if(i===sel)startGame();else{sel=i;snd(440,.04)}return}}
   if(pr('start')||pr('a'))startGame();
 }
 function step(){frameN++;
@@ -586,17 +589,17 @@ function step(){frameN++;
 function drawMenu(){R(0,0,W,H,'#000');
   for(let i=0;i<50;i++)R((i*53+frameN*(0.2+(i%3)*0.25))%W,(i*37)%H,1,1,i%5?P.gy:P.wh);
   const cs=[P.rd,P.or,P.yl,P.lgn,P.lb,P.pk];
-  const title='物理學家 10 合 1';ctx.font='bold 13px '+FONT;const tw=ctx.measureText(title).width;let x=128-tw/2;
+  const title='物理學家 '+NG+' 合 1';ctx.font='bold 13px '+FONT;const tw=ctx.measureText(title).width;let x=128-tw/2;
   for(let i=0;i<title.length;i++){const ch=title[i];ctx.font='bold 13px '+FONT;const w=ctx.measureText(ch).width;T(ch,x,6+Math.sin(frameN*0.08+i*0.6)*2,cs[(i+Math.floor(frameN/20))%6],13,'left',true);x+=w;}
-  T('PHYSICIST 10 IN 1',128,28,P.lg,7,'center');
-  for(let i=0;i<10;i++){const y=ML_Y+i*ML_H;
+  T('PHYSICIST '+NG+' IN 1',128,26,P.lg,7,'center');
+  for(let i=0;i<NG;i++){const y=ML_Y+i*ML_H;
     if(i===sel){R(14,y-1,228,ML_H-1,'#0000a8');if(frameN%30<20)T('►',20,y+1,P.yl,9);}
     T((i+1<10?' ':'')+(i+1)+'.',32,y+1,i===sel?P.wh:P.lb,9);
     T(NAMES[i][0],52,y+1,i===sel?P.wh:P.lb,9,'left',i===sel);
-    T(NAMES[i][1],238,y+3,i===sel?P.ye:P.gy,7,'right');}
-  R(10,ML_Y+10*ML_H+2,236,44,'#000');ctx.strokeStyle=P.lb;ctx.lineWidth=1;ctx.strokeRect(10.5,ML_Y+10*ML_H+2.5,235,43);
-  T(DESC[sel][0],128,ML_Y+10*ML_H+7,P.wh,8,'center');T(DESC[sel][1],128,ML_Y+10*ML_H+18,P.wh,8,'center');
-  T('最高分 '+(hi[sel]||0)+'　　'+(frameN%50<35?'按 START 或 A 開始':''),128,ML_Y+10*ML_H+31,P.ye,8,'center');
+    T(NAMES[i][1],238,y+2,i===sel?P.ye:P.gy,7,'right');}
+  const BY=ML_Y+NG*ML_H+3;R(10,BY,236,H-BY-3,'#000');ctx.strokeStyle=P.lb;ctx.lineWidth=1;ctx.strokeRect(10.5,BY+.5,235,H-BY-4);
+  T(DESC[sel][0],128,BY+4,P.wh,8,'center');T(DESC[sel][1],128,BY+15,P.wh,8,'center');
+  T((EXT[sel]?'外部遊戲':'最高分 '+(hi[sel]||0))+'　　'+(frameN%50<35?'按 START 或 A 開始':''),128,BY+27,P.ye,8,'center');
 }
 function drawOver(){R(44,82,168,76,'#000');R(45,83,166,74,P.db);R(47,85,162,70,'#000');
   T(cur.win?'恭喜過關！':'GAME OVER',128,90,cur.win?P.yl:P.rd,13,'center',true);
