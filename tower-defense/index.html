@@ -1,0 +1,2355 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>物理學家塔防 3D：知識保衛戰 (PHYSICS TOWER DEFENSE 3D)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Noto+Sans+TC:wght@500;700;900&family=Press+Start+2P&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #0e1116;
+      font-family: 'Noto Sans TC', 'Chakra Petch', sans-serif;
+      color: #f8fafc;
+    }
+
+    #webgl-container {
+      position: fixed;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1;
+      touch-action: none;
+    }
+
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+
+    .font-arcade {
+      font-family: 'Press Start 2P', 'Chakra Petch', monospace;
+    }
+
+    .font-tech {
+      font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+    }
+
+    .brass-panel {
+      background: linear-gradient(180deg, rgba(34, 28, 24, 0.94) 0%, rgba(18, 15, 13, 0.96) 100%);
+      border: 1.5px solid #b47b2b;
+      box-shadow: 0 6px 22px rgba(0, 0, 0, 0.78), inset 0 1px 0 rgba(253, 224, 71, 0.22);
+      backdrop-filter: blur(8px);
+    }
+
+    .title-gold-grad {
+      background: linear-gradient(180deg, #fef9c3 0%, #facc15 50%, #ea580c 95%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 2px 0 #1c0a00);
+    }
+
+    .btn {
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: rgba(250, 204, 21, 0.3);
+      transition: transform 0.08s ease, filter 0.12s ease, box-shadow 0.12s ease;
+      box-shadow: 0 3px 0 rgba(0, 0, 0, 0.72), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    }
+    .btn * {
+      pointer-events: none !important;
+    }
+    .btn:active:not(:disabled) {
+      transform: translateY(2px) scale(0.97);
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.72);
+    }
+    .btn:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+      filter: grayscale(0.6);
+    }
+
+    /* Tower build card dock */
+    .tower-dock-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+    }
+    .tower-card-btn {
+      cursor: pointer;
+      touch-action: manipulation;
+      transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+    }
+    .tower-card-btn * {
+      pointer-events: none !important;
+    }
+    .tower-card-selected {
+      transform: translateY(-6px) scale(1.04);
+      border-color: #facc15 !important;
+      box-shadow: 0 0 0 2.5px #facc15, 0 0 18px rgba(250, 204, 21, 0.85) !important;
+    }
+
+    /* 3D Flip Card for Physgram Encyclopedia & MVP Summary */
+    .flip-perspective {
+      perspective: 1000px;
+    }
+    .flip-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+    .flip-inner.is-flipped {
+      transform: rotateY(180deg);
+    }
+    .flip-face {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+    }
+    .flip-back {
+      transform: rotateY(180deg);
+    }
+
+    /* Floating damage & gold popup layer */
+    .floating-label {
+      position: fixed;
+      pointer-events: none;
+      font-family: 'Chakra Petch', 'Noto Sans TC', sans-serif;
+      font-weight: 900;
+      text-shadow: 0 2px 4px #000, 0 0 8px rgba(0, 0, 0, 0.9);
+      z-index: 30;
+      animation: floatUpFade 0.95s ease-out forwards;
+    }
+    @keyframes floatUpFade {
+      0% { opacity: 1; transform: translate(-50%, 0px) scale(0.95); }
+      25% { opacity: 1; transform: translate(-50%, -12px) scale(1.08); }
+      100% { opacity: 0; transform: translate(-50%, -44px) scale(0.9); }
+    }
+
+    @keyframes eurekaPulse {
+      0%, 100% { box-shadow: 0 0 0 2px #fde047, 0 0 16px rgba(250, 204, 21, 0.85); }
+      50% { box-shadow: 0 0 0 4px #ffffff, 0 0 28px rgba(250, 204, 21, 1); }
+    }
+    .eureka-ready {
+      animation: eurekaPulse 1s infinite ease-in-out;
+    }
+
+    /* Mobile bottom safe area padding */
+    @media (max-width: 640px) {
+      #bottom-hud-wrapper {
+        padding-bottom: max(12px, env(safe-area-inset-bottom));
+      }
+    }
+
+    ::-webkit-scrollbar {
+      height: 5px;
+      width: 5px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #d97706;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- 3D WebGL Viewport -->
+  <div id="webgl-container"></div>
+
+  <!-- Floating Combat Popups Container -->
+  <div id="floating-popups" class="fixed inset-0 pointer-events-none z-30 overflow-hidden"></div>
+
+  <!-- ===================================================================== -->
+  <!-- TOP ACADEMY HUD BAR                                                   -->
+  <!-- ===================================================================== -->
+  <header class="fixed top-0 left-0 right-0 z-20 p-1.5 sm:p-2.5 pointer-events-none flex flex-col gap-1.5">
+    <div class="max-w-7xl w-full mx-auto brass-panel rounded-2xl px-2.5 sm:px-4 py-1.5 pointer-events-auto flex flex-wrap items-center justify-between gap-1.5">
+      <!-- Left: Title & Core Resources -->
+      <div class="flex items-center gap-2 sm:gap-3 flex-wrap">
+        <div class="hidden lg:flex items-center gap-1.5">
+          <span class="px-1.5 py-0.5 bg-amber-500 text-stone-950 font-arcade text-[9px] rounded">3D TD</span>
+          <h1 class="font-black text-sm xl:text-base title-gold-grad whitespace-nowrap">物理學家塔防 3D：知識保衛戰</h1>
+        </div>
+
+        <div class="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-tech font-bold">
+          <span class="px-2 py-0.5 rounded-xl bg-rose-950/90 border border-rose-500/60 text-rose-200 flex items-center gap-1">
+            🏛️ <span id="hud-lives">20</span>
+          </span>
+          <span class="px-2 py-0.5 rounded-xl bg-amber-950/90 border border-amber-400/70 text-amber-300 flex items-center gap-1">
+            💰 $<span id="hud-gold">240</span>
+          </span>
+          <span class="px-2 py-0.5 rounded-xl bg-sky-950/90 border border-sky-400/60 text-sky-200 flex items-center gap-1">
+            🌊 <span id="hud-wave">0/15</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Right: Camera Presets, Encyclopedia, Map Switch & Audio -->
+      <div class="flex items-center gap-1 sm:gap-1.5 flex-wrap">
+        <button id="btn-cam-tactical" type="button" class="btn px-2 py-1 bg-stone-800 border border-amber-500/60 text-amber-200 font-bold text-[10px] sm:text-xs rounded-xl" title="45度戰術視角">
+          📐 45°戰術
+        </button>
+        <button id="btn-cam-top" type="button" class="btn px-2 py-1 bg-stone-800 border border-stone-600 text-stone-200 font-bold text-[10px] sm:text-xs rounded-xl" title="高空俯視">
+          🛰️ 俯視
+        </button>
+        <button id="btn-cam-low" type="button" class="btn px-2 py-1 bg-stone-800 border border-stone-600 text-stone-200 font-bold text-[10px] sm:text-xs rounded-xl" title="低角度特寫">
+          🎥 特寫
+        </button>
+        <button id="btn-open-encyclopedia" type="button" class="btn px-2.5 py-1 bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950 font-black text-[10px] sm:text-xs rounded-xl">
+          💡 Physgram圖鑑
+        </button>
+        <button id="btn-mute" type="button" class="btn px-2 py-1 bg-sky-800 text-white font-bold text-xs rounded-xl" title="音效開關">
+          🔊
+        </button>
+        <button id="btn-open-menu" type="button" class="btn px-2 py-1 bg-rose-900 text-rose-100 font-bold text-[10px] sm:text-xs rounded-xl">
+          🗺️ 地圖
+        </button>
+      </div>
+    </div>
+
+    <!-- Second Sub-bar: Wave Control, Speed & Eureka Ultimate -->
+    <div class="max-w-7xl w-full mx-auto flex items-center justify-between gap-1.5 px-0.5">
+      <div id="status-banner" class="pointer-events-auto brass-panel rounded-full px-3 py-1 text-[11px] sm:text-xs text-amber-200 font-bold truncate max-w-[54vw] sm:max-w-md">
+        點擊下方物理學家卡片，再點擊戰場綠色基座建造防禦塔！
+      </div>
+
+      <div class="pointer-events-auto flex items-center gap-1.5">
+        <button id="btn-eureka" type="button" class="btn px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-yellow-400 via-amber-500 to-orange-500 text-stone-950 font-black text-[11px] sm:text-xs rounded-full border border-yellow-200">
+          ⚡ 靈感大爆發 (<span id="hud-eureka-pct">50</span>%)
+        </button>
+        <button id="btn-speed" type="button" class="btn px-2.5 py-1.5 bg-stone-800 border border-cyan-500/60 text-cyan-200 font-arcade text-[10px] sm:text-xs rounded-full">
+          ⏩ 1x
+        </button>
+        <button id="btn-wave-action" type="button" class="btn px-3 sm:px-4 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-xs sm:text-sm rounded-full border border-emerald-200">
+          ▶️ 開始第 1 波
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- SELECTED TOWER INSPECTOR PANEL (FLOATING RIGHT / TOP-RIGHT)           -->
+  <!-- ===================================================================== -->
+  <aside id="tower-inspector" class="hidden fixed right-2 sm:right-4 top-24 sm:top-28 z-20 w-64 sm:w-72 brass-panel rounded-2xl p-3 space-y-2.5 shadow-2xl">
+    <div class="flex items-start justify-between gap-2 border-b border-stone-700 pb-2">
+      <div>
+        <div class="flex items-center gap-1.5">
+          <span id="insp-name" class="font-black text-sm sm:text-base text-amber-300">牛頓 (Newton)</span>
+          <span id="insp-level" class="px-1.5 py-0.5 rounded bg-amber-500 text-stone-950 font-arcade text-[9px]">Lv.1</span>
+        </div>
+        <div id="insp-formula" class="text-[11px] font-tech text-cyan-300">F = G·(m₁m₂)/r²</div>
+      </div>
+      <button id="btn-close-inspector" type="button" class="btn px-2 py-0.5 bg-stone-800 text-stone-300 text-xs rounded-lg">✕</button>
+    </div>
+
+    <p id="insp-desc" class="text-[11px] text-stone-200 leading-snug">
+      發射高動量引力蘋果，造成高額單體物理傷害並使目標減速 30%。
+    </p>
+
+    <div class="grid grid-cols-3 gap-1.5 bg-stone-950/90 border border-stone-700 rounded-xl p-2 text-center font-tech">
+      <div>
+        <div class="text-[10px] text-stone-400">攻擊力</div>
+        <div id="insp-dmg" class="text-xs font-black text-amber-300">28</div>
+      </div>
+      <div>
+        <div class="text-[10px] text-stone-400">射程 / 攻速</div>
+        <div id="insp-stats" class="text-xs font-black text-cyan-300">4.2 / 1.1s</div>
+      </div>
+      <div>
+        <div class="text-[10px] text-stone-400">累計輸出</div>
+        <div id="insp-total-dmg" class="text-xs font-black text-emerald-300">0</div>
+      </div>
+    </div>
+
+    <!-- Target Priority Toggle -->
+    <div class="flex items-center justify-between gap-1.5">
+      <span class="text-[11px] text-stone-300 font-bold">索敵優先：</span>
+      <button id="btn-toggle-priority" type="button" class="btn flex-1 py-1 px-2 bg-sky-950 border border-sky-500/60 text-sky-200 font-bold text-[11px] rounded-xl">
+        🎯 最接近終點
+      </button>
+    </div>
+
+    <!-- Action Buttons: Upgrade, Sell (75%), Physgram Trivia -->
+    <div class="grid grid-cols-2 gap-1.5 pt-0.5">
+      <button id="btn-upgrade-tower" type="button" class="btn py-1.5 px-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-xs rounded-xl">
+        ⬆️ 升級 ($90)
+      </button>
+      <button id="btn-sell-tower" type="button" class="btn py-1.5 px-2 bg-rose-900 border border-rose-500/50 text-rose-100 font-bold text-xs rounded-xl">
+        💰 出售 (+$45)
+      </button>
+    </div>
+    <button id="btn-insp-trivia" type="button" class="btn w-full py-1.5 px-2 bg-amber-500/20 border border-amber-400 text-amber-300 font-black text-xs rounded-xl">
+      💡 翻閱 Physgram 物理冷知識
+    </button>
+  </aside>
+
+  <!-- ===================================================================== -->
+  <!-- BOTTOM 12 PHYSICISTS TOWER BUILD DOCK                                 -->
+  <!-- ===================================================================== -->
+  <footer id="bottom-hud-wrapper" class="fixed bottom-0 left-0 right-0 z-20 p-1.5 sm:p-2.5 pointer-events-none">
+    <div class="max-w-7xl w-full mx-auto brass-panel rounded-2xl p-1.5 sm:p-2 pointer-events-auto">
+      <div class="flex items-center justify-between px-1 pb-1 text-[10px] sm:text-xs">
+        <span class="font-black text-amber-300">🏛️ 物理學家防禦塔構築列（點擊選取後，再點擊 3D 戰場綠色基座建造）</span>
+        <button id="btn-cancel-build" type="button" class="btn hidden px-2 py-0.5 bg-rose-600 text-white font-black text-[10px] rounded-full">
+          ✕ 取消選取
+        </button>
+      </div>
+      <div id="tower-dock" class="tower-dock-scroll flex items-stretch gap-1.5 sm:gap-2 pb-0.5"></div>
+    </div>
+  </footer>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 1: MAP SELECTION & START MENU                                   -->
+  <!-- ===================================================================== -->
+  <div id="menu-modal" class="fixed inset-0 z-40 bg-black/82 backdrop-blur-sm flex items-center justify-center p-3 overflow-y-auto">
+    <div class="max-w-4xl w-full brass-panel rounded-3xl p-4 sm:p-6 space-y-4 my-auto">
+      <div class="text-center">
+        <div class="inline-block px-3 py-0.5 rounded-full bg-amber-500/20 border border-amber-400 text-amber-300 font-black text-xs mb-1">
+          🏛️ Three.js 全 3D WebGL 物理學院戰略塔防
+        </div>
+        <h2 class="text-xl sm:text-4xl font-black title-gold-grad">物理學家塔防 3D：知識保衛戰</h2>
+        <p class="text-xs sm:text-sm text-stone-300 mt-1">
+          號召 12 位歷史物理巨匠建立立體防線，演化 Lv.3 終極實驗裝置，守護皇家科學院真理之塔！
+        </p>
+      </div>
+
+      <!-- 3 Map Selection Cards -->
+      <div>
+        <div class="text-xs font-black text-amber-300 mb-2">🗺️ 選擇 3D 實驗室關卡戰場：</div>
+        <div id="map-select-grid" class="grid grid-cols-1 sm:grid-cols-3 gap-2.5"></div>
+      </div>
+
+      <!-- Controls Quick Guide -->
+      <div class="bg-stone-950/90 border border-stone-700 rounded-2xl p-3 grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px] text-stone-300">
+        <div>🖱️/👆 <b class="text-amber-300">視角操作</b>：拖曳旋轉 360°、滾輪或雙指縮放、點擊預設視角按鈕。</div>
+        <div>🏗️ <b class="text-emerald-300">建塔與進化</b>：選取下方物理學家卡片 → 點擊綠色基座建造，最高進化至 Lv.3！</div>
+        <div>👻 <b class="text-cyan-300">破隱與克制</b>：「量子幽靈」需靠<b>倫琴</b>或<b>波耳</b>顯形；「教條石像」懼怕<b>伽利略</b>破甲。</div>
+      </div>
+
+      <div class="flex flex-wrap justify-center gap-3 pt-1">
+        <button id="btn-start-game" type="button" class="btn px-7 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-sm sm:text-base rounded-2xl">
+          🚀 進入 3D 學院戰場
+        </button>
+        <button id="btn-menu-encyclopedia" type="button" class="btn px-5 py-3 bg-gradient-to-r from-amber-500 to-orange-600 text-stone-950 font-black text-sm rounded-2xl">
+          💡 預覽 Physgram 冷知識圖鑑
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 2: PHYSGRAM 3D FLIP CARD ENCYCLOPEDIA                           -->
+  <!-- ===================================================================== -->
+  <div id="encyclopedia-modal" class="hidden fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-2.5 sm:p-5">
+    <div class="max-w-6xl w-full brass-panel rounded-3xl p-4 sm:p-6 max-h-[88dvh] flex flex-col gap-3">
+      <div class="flex items-center justify-between border-b border-stone-700 pb-2.5 shrink-0">
+        <div>
+          <h3 class="text-base sm:text-2xl font-black title-gold-grad">💡 Physgram 物理冷知識 3D 翻牌圖鑑</h3>
+          <p class="text-[11px] sm:text-xs text-stone-300">點擊任意物理學家卡片，觸發 3D 翻轉閱讀真實科學歷史軼事！</p>
+        </div>
+        <button id="btn-close-encyclopedia" type="button" class="btn px-3 py-1.5 bg-rose-700 text-white font-black text-xs rounded-xl">
+          ✕ 關閉
+        </button>
+      </div>
+      <div id="encyclopedia-grid" class="overflow-y-auto grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 pr-1 pb-6"></div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 3: VICTORY / DEFEAT RESULT & MVP 3D FLIP CARD                   -->
+  <!-- ===================================================================== -->
+  <div id="result-modal" class="hidden fixed inset-0 z-40 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 overflow-y-auto">
+    <div class="max-w-lg w-full brass-panel rounded-3xl p-4 sm:p-6 text-center space-y-4 my-auto">
+      <h2 id="result-title" class="text-xl sm:text-3xl font-black title-gold-grad">🏆 真理之塔守護成功！</h2>
+      <p id="result-subtitle" class="text-xs sm:text-sm text-amber-200 font-bold">
+        點擊下方本局 MVP 物理學家紀念閃卡，3D 翻面查看科學冷知識！
+      </p>
+
+      <div id="result-mvp-slot" class="w-60 h-72 mx-auto"></div>
+
+      <div class="flex flex-wrap justify-center gap-3">
+        <button id="btn-result-retry" type="button" class="btn px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 text-white font-black text-xs sm:text-sm rounded-2xl">
+          🔄 再次挑戰本關
+        </button>
+        <button id="btn-result-menu" type="button" class="btn px-5 py-2.5 bg-amber-500 text-stone-950 font-black text-xs sm:text-sm rounded-2xl">
+          🗺️ 選擇其他地圖
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- COMPLETE 3D TOWER DEFENSE ENGINE (THREE.JS r128 + WEB AUDIO)          -->
+  <!-- ===================================================================== -->
+  <script>
+    'use strict';
+
+    /**
+     * 1. WEB AUDIO SYNTHESIZER (NO EXTERNAL AUDIO URLS)
+     */
+    class SoundFX {
+      constructor() {
+        this.ctx = null;
+        this.muted = false;
+      }
+      init() {
+        if (!this.ctx) {
+          const Ctx = window.AudioContext || window.webkitAudioContext;
+          if (Ctx) this.ctx = new Ctx();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') {
+          this.ctx.resume().catch(() => {});
+        }
+      }
+      tone(f1, f2, dur, type = 'triangle', vol = 0.06) {
+        if (this.muted) return;
+        this.init();
+        if (!this.ctx) return;
+        try {
+          const now = this.ctx.currentTime;
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(f1, now);
+          if (f2 !== f1) osc.frequency.exponentialRampToValueAtTime(Math.max(20, f2), now + dur);
+          gain.gain.setValueAtTime(vol, now);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + dur);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start(now);
+          osc.stop(now + dur);
+        } catch (e) {}
+      }
+      playClick() { this.tone(680, 920, 0.05, 'sine', 0.05); }
+      playBuild() {
+        this.tone(240, 480, 0.12, 'triangle', 0.09);
+        setTimeout(() => this.tone(523, 784, 0.12, 'sine', 0.07), 65);
+      }
+      playUpgrade() {
+        [440, 554, 659, 880].forEach((f, i) => setTimeout(() => this.tone(f, f * 1.04, 0.1, 'triangle', 0.08), i * 55));
+      }
+      playShoot(kind) {
+        if (kind === 'laser') this.tone(1180, 260, 0.09, 'sawtooth', 0.04);
+        else if (kind === 'ice') this.tone(860, 520, 0.1, 'sine', 0.04);
+        else if (kind === 'boom') this.tone(150, 38, 0.18, 'sawtooth', 0.07);
+        else this.tone(360, 180, 0.08, 'triangle', 0.04);
+      }
+      playKill() { this.tone(540, 810, 0.07, 'sine', 0.05); }
+      playEureka() {
+        [523.25, 659.25, 783.99, 1046.5, 1318.5].forEach((f, i) => {
+          setTimeout(() => this.tone(f, f * 1.06, 0.25, 'triangle', 0.09), i * 75);
+        });
+      }
+      playLeak() { this.tone(180, 65, 0.28, 'sawtooth', 0.11); }
+      playVictory() {
+        [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+          setTimeout(() => this.tone(f, f * 1.04, 0.28, 'triangle', 0.1), i * 110);
+        });
+      }
+    }
+    const sfx = new SoundFX();
+
+    /**
+     * 2. 12 PHYSICISTS DATABASE (STATS, FORMULAS, SPECIAL ABILITIES & PHYSGRAM TRIVIA)
+     */
+    const PHYSICISTS_DB = [
+      {
+        id: 'newton',
+        name: '牛頓 (Newton)',
+        shortName: '牛頓',
+        role: '單體重擊・減速',
+        cost: 60,
+        dmg: 28,
+        range: 4.3,
+        cooldown: 1.05,
+        color: '#ef4444',
+        accentHex: 0xef4444,
+        formula: 'F = G·(m₁m₂)/r²',
+        years: '1642–1726',
+        desc: '發射高動量引力蘋果與繞行月球衛星，造成高額單體物理傷害並使目標減速 30%。',
+        trivia: '牛頓晚年擔任英國皇家鑄幣廠廠長時，化身偵探親自喬裝走訪倫敦酒館，成功將當時最猖獗的偽幣集團首腦威廉・查洛納繩之以法！'
+      },
+      {
+        id: 'galileo',
+        name: '伽利略 (Galileo)',
+        shortName: '伽利略',
+        role: '破甲砲擊・暈眩',
+        cost: 75,
+        dmg: 42,
+        range: 4.6,
+        cooldown: 1.45,
+        armorPierce: true,
+        color: '#f59e0b',
+        accentHex: 0xf59e0b,
+        formula: 's = ½ g t²',
+        years: '1564–1642',
+        desc: '投擲雙鐵球自由落體重砲，無視「教條石像」高護甲並短暫擊暈敵軍 0.6 秒。',
+        trivia: '伽利略改良望遠鏡後發現木星的四顆衛星（今稱伽利略衛星），成為推翻「地球是宇宙中心」的關鍵鐵證。'
+      },
+      {
+        id: 'hooke',
+        name: '虎克 (Hooke)',
+        shortName: '虎克',
+        role: '彈性連鎖彈射',
+        cost: 70,
+        dmg: 19,
+        range: 4.0,
+        cooldown: 0.9,
+        color: '#eab308',
+        accentHex: 0xeab308,
+        formula: 'F = -k · x',
+        years: '1635–1703',
+        desc: '壓縮彈性螺旋線圈發射彈跳震盪波，可在最多 4 名敵人之間連續彈射傷害。',
+        trivia: '虎克不僅發現彈簧的虎克定律，還在 1665 年出版《微物圖誌》，用自製顯微鏡觀察軟木塞並首度命名「細胞（Cell）」。'
+      },
+      {
+        id: 'kelvin',
+        name: '凱爾文 (Kelvin)',
+        shortName: '凱爾文',
+        role: '範圍緩速・凍結',
+        cost: 80,
+        dmg: 14,
+        range: 3.8,
+        cooldown: 1.15,
+        color: '#22d3ee',
+        accentHex: 0x22d3ee,
+        formula: '0 K = -273.15°C',
+        years: '1824–1907',
+        desc: '釋放絕對零度低溫脈衝，使範圍內所有敵軍移動速度降低 45%，升級後機率完全凍結！',
+        trivia: '凱爾文男爵主導鋪設了第一條橫跨大西洋的海底電報電纜，並依據熱力學定律精確推算出物質分子動能為零的「絕對零度」。'
+      },
+      {
+        id: 'faraday',
+        name: '法拉第 (Faraday)',
+        shortName: '法拉第',
+        role: '連鎖閃電・攻速光環',
+        cost: 95,
+        dmg: 22,
+        range: 4.1,
+        cooldown: 1.0,
+        color: '#38bdf8',
+        accentHex: 0x38bdf8,
+        formula: 'ℰ = -dΦ / dt',
+        years: '1791–1867',
+        desc: '電磁感應線圈釋放高壓連鎖閃電，同時使周圍相鄰防禦塔攻擊速度提升 20%！',
+        trivia: '法拉第出身鐵匠家庭，僅受過基本小學教育，在裝訂店當學徒時自學科學書籍，最終發現電磁感應並開創現代電力時代。'
+      },
+      {
+        id: 'maxwell',
+        name: '馬克斯威 (Maxwell)',
+        shortName: '馬克斯威',
+        role: '直線穿透電磁波',
+        cost: 110,
+        dmg: 32,
+        range: 5.5,
+        cooldown: 1.35,
+        color: '#3b82f6',
+        accentHex: 0x3b82f6,
+        formula: '∇×B = μ₀J + μ₀ε₀∂E/∂t',
+        years: '1831–1879',
+        desc: '紅藍交織電磁波環發射長距離直線穿透光束，貫穿路徑上所有敵軍單位！',
+        trivia: '馬克斯威用四條對稱優美的方程式統一了電、磁與光學，此外他還在 1861 年拍出了人類史上第一張永久彩色照片。'
+      },
+      {
+        id: 'rontgen',
+        name: '倫琴 (Röntgen)',
+        shortName: '倫琴',
+        role: 'X光破甲・反隱形',
+        cost: 85,
+        dmg: 24,
+        range: 4.8,
+        cooldown: 0.95,
+        armorPierce: true,
+        antiStealth: true,
+        color: '#84cc16',
+        accentHex: 0x84cc16,
+        formula: 'E = hν (X-Ray)',
+        years: '1845–1923',
+        desc: '發射高能 X 射線穿透敵軍護甲，並永久揭露範圍內所有隱形的「量子幽靈」！',
+        trivia: '1895 年倫琴發現能穿透黑紙與肌肉的 X 射線，並為妻子拍攝了戴著婚戒的左手骨骼照片；他拒絕申請專利，將成果無償獻給全人類。'
+      },
+      {
+        id: 'curie',
+        name: '居禮夫人 (Curie)',
+        shortName: '居禮夫人',
+        role: '無限疊加輻射真傷',
+        cost: 105,
+        dmg: 16,
+        range: 4.2,
+        cooldown: 0.95,
+        color: '#22c55e',
+        accentHex: 0x22c55e,
+        formula: 'N(t) = N₀e^(-λt)',
+        years: '1867–1934',
+        desc: '發光鐳元素核心對目標施加可無限疊加的「放射性衰變」，每秒造成無視護甲真實傷害！',
+        trivia: '居禮夫人是史上首位兩度獲得諾貝爾獎（物理學獎與化學獎）的科學家，她當年的實驗筆記本至今仍具高度放射性並存放在鉛盒中。'
+      },
+      {
+        id: 'bohr',
+        name: '波耳 (Niels Bohr)',
+        shortName: '波耳',
+        role: '高速軌域・反隱形',
+        cost: 100,
+        dmg: 14,
+        range: 3.4,
+        cooldown: 0.42,
+        antiStealth: true,
+        color: '#06b6d4',
+        accentHex: 0x06b6d4,
+        formula: 'ΔE = E₂ - E₁ = hν',
+        years: '1885–1962',
+        desc: '多層電子軌域環高速旋轉切割近距離敵軍，並偵測附近隱形的「量子幽靈」。',
+        trivia: '1922 年波耳獲得諾貝爾物理學獎後，嘉士伯啤酒廠特地贈送他一棟緊鄰酒廠的豪宅，並鋪設了一條直接通往他家水龍頭的免費啤酒管線！'
+      },
+      {
+        id: 'heisenberg',
+        name: '海森堡 (Heisenberg)',
+        shortName: '海森堡',
+        role: '測不準暴擊・量子傳送',
+        cost: 115,
+        dmg: 26,
+        range: 4.4,
+        cooldown: 0.9,
+        color: '#f43f5e',
+        accentHex: 0xf43f5e,
+        formula: 'Δx · Δp ≥ ℏ / 2',
+        years: '1901–1976',
+        desc: '量子機率雲發動 1x～3.5x 隨機倍率暴擊，並有 22% 機率將敵人量子隧穿傳送回路徑後方！',
+        trivia: '1925 年海森堡為躲避嚴重花粉症前往北海孤島黑爾戈蘭島休養，在海風中靈光乍現創立了量子力學第一套完整體系——矩陣力學。'
+      },
+      {
+        id: 'einstein',
+        name: '愛因斯坦 (Einstein)',
+        shortName: '愛因斯坦',
+        role: 'E=mc² 質能核爆範圍',
+        cost: 140,
+        dmg: 58,
+        range: 4.9,
+        cooldown: 1.65,
+        color: '#a855f7',
+        accentHex: 0xa855f7,
+        formula: 'E = m · c²',
+        years: '1879–1955',
+        desc: '扭曲時空重力透鏡，投射高能質能光球引爆大範圍 E=mc² 毀滅性衝擊波！',
+        trivia: '1905 年被稱為愛因斯坦的「奇蹟年」，他在專利局工作之餘於一年內連續發表光電效應、布朗運動、狹義相對論與 E=mc² 四篇劃時代論文。'
+      },
+      {
+        id: 'hawking',
+        name: '霍金 (Hawking)',
+        shortName: '霍金',
+        role: '黑洞引力聚怪・輻射',
+        cost: 160,
+        dmg: 36,
+        range: 4.7,
+        cooldown: 1.25,
+        color: '#fb923c',
+        accentHex: 0xfb923c,
+        formula: 'S = kc³A / 4Gℏ',
+        years: '1942–2018',
+        desc: '黑洞事件視界產生強大引力場牽引聚攏敵軍，並持續釋放高熱霍金輻射範圍傷害！',
+        trivia: '霍金與基普・索恩曾打賭天鵝座 X-1 是不是黑洞，賭注是「如果霍金輸了就替索恩訂閱四年《閣樓》雜誌」，最終霍金在 1990 年爽快認輸兌現。'
+      }
+    ];
+
+    /**
+     * 3. THREE.JS SCENE, PROCEDURAL TEXTURES & 3 MAPS DEFINITIONS
+     */
+    const MAPS_DB = [
+      {
+        id: 'garden',
+        name: '1. 皇家科學院花園',
+        waves: 15,
+        theme: 'garden',
+        desc: '單線蜿蜒石磚路徑、歐洲石牆與常春藤花園，適合熟悉 12 位物理學家連攜。',
+        paths: [
+          [
+            [-11, -6], [-5, -6], [-5, 4], [1, 4], [1, -4], [7, -4], [7, 5], [11.5, 5]
+          ]
+        ],
+        pads: [
+          [-8, -3.5], [-8, -8.5], [-2.5, -3.5], [-2.5, 1.5], [-7.5, 2],
+          [-2, 6.5], [3.5, 1.5], [3.5, -1.5], [3.5, -6.5], [9.5, -1.5],
+          [9.5, 2.5], [4.5, 7], [-5, 7], [9.5, -6.5]
+        ]
+      },
+      {
+        id: 'doubleslit',
+        name: '2. 電磁雙縫實驗室',
+        waves: 20,
+        theme: 'lab',
+        desc: '敵軍通過雙狹縫屏障分流為上下兩路波干涉路徑，最後在真理之塔前匯聚！',
+        paths: [
+          [
+            [-11.5, 0], [-6.5, 0], [-4.5, -5.5], [4.5, -5.5], [7, 0], [11.5, 0]
+          ],
+          [
+            [-11.5, 0], [-6.5, 0], [-4.5, 5.5], [4.5, 5.5], [7, 0], [11.5, 0]
+          ]
+        ],
+        pads: [
+          [-9, -2.5], [-9, 2.5], [-4.5, -2.5], [-4.5, 2.5],
+          [0, -2.8], [0, 0], [0, 2.8],
+          [4.5, -2.5], [4.5, 2.5], [-1.5, -8], [2.5, -8],
+          [-1.5, 8], [2.5, 8], [9, -2.6], [9, 2.6]
+        ]
+      },
+      {
+        id: 'blackhole',
+        name: '3. 黑洞時空奇點',
+        waves: 25,
+        theme: 'space',
+        desc: '沿著巨大吸積盤重力井向內盤旋的螺旋軌道，考驗全場火力配置與大絕招時機！',
+        paths: [
+          [
+            [-11, -8], [10, -8], [10, 8], [-9, 8], [-9, -4], [6, -4], [6, 4], [-4, 4], [-4, 0], [1.2, 0]
+          ]
+        ],
+        pads: [
+          [-7, -5.8], [-2, -5.8], [3, -5.8], [7.8, -5.8],
+          [7.8, -1], [7.8, 5.8], [2.5, 5.8], [-2.5, 5.8],
+          [-6.8, 5.8], [-6.8, 1.5], [-6.8, -1.8],
+          [-1.5, -1.8], [3.5, -1.8], [3.5, 1.8], [-1.5, 1.8]
+        ]
+      }
+    ];
+
+    // Global Three.js objects
+    let scene, camera, renderer;
+    let mapGroup, towersGroup, enemiesGroup, projectilesGroup, fxGroup;
+    const raycaster = new THREE.Raycaster();
+    const pointerNDC = new THREE.Vector2();
+
+    // Camera spherical orbit state
+    const camOrbit = {
+      theta: 0.35,
+      phi: 0.78,
+      radius: 21,
+      targetTheta: 0.35,
+      targetPhi: 0.78,
+      targetRadius: 21,
+      lookAt: new THREE.Vector3(0, 0, 0)
+    };
+
+    // Game Simulation State
+    const game = {
+      selectedMapId: 'garden',
+      currentMap: MAPS_DB[0],
+      gold: 240,
+      lives: 20,
+      wave: 0,
+      maxWaves: 15,
+      waveActive: false,
+      spawnQueue: [],
+      spawnTimer: 0,
+      gameSpeed: 1,
+      paused: false,
+      gameOver: false,
+      eurekaCharge: 50,
+      eurekaTimer: 0,
+      selectedBuildId: null,
+      selectedTower: null,
+      padMeshes: [],
+      towers: [],
+      enemies: [],
+      projectiles: [],
+      particles: [],
+      rangeRingMesh: null,
+      coreCrystalMesh: null
+    };
+
+    /**
+     * 4. PROCEDURAL CANVAS TEXTURES (STONE BRICK, SHUTTERS, CHALKBOARD FORMULAS)
+     */
+    function createChalkboardTexture(formulaText, titleText, accentColor = '#38bdf8') {
+      const c = document.createElement('canvas');
+      c.width = 256;
+      c.height = 128;
+      const ctx = c.getContext('2d');
+
+      // Slate chalkboard background
+      ctx.fillStyle = '#15221c';
+      ctx.fillRect(0, 0, 256, 128);
+
+      // Wooden frame border
+      ctx.strokeStyle = '#92400e';
+      ctx.lineWidth = 10;
+      ctx.strokeRect(5, 5, 246, 118);
+
+      // Title
+      ctx.fillStyle = '#fde047';
+      ctx.font = 'bold 24px "Noto Sans TC", sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(titleText, 128, 44);
+
+      // Physics formula
+      ctx.fillStyle = accentColor;
+      ctx.font = 'bold 26px "Chakra Petch", monospace';
+      ctx.fillText(formulaText, 128, 92);
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.needsUpdate = true;
+      return tex;
+    }
+
+    function createStoneGroundTexture(theme) {
+      const c = document.createElement('canvas');
+      c.width = 512;
+      c.height = 512;
+      const ctx = c.getContext('2d');
+
+      if (theme === 'garden') {
+        ctx.fillStyle = '#2d4a36';
+        ctx.fillRect(0, 0, 512, 512);
+        for (let i = 0; i < 650; i++) {
+          ctx.fillStyle = i % 2 === 0 ? 'rgba(74, 222, 128, 0.08)' : 'rgba(20, 40, 26, 0.16)';
+          ctx.fillRect(Math.random() * 512, Math.random() * 512, 6, 6);
+        }
+      } else if (theme === 'lab') {
+        ctx.fillStyle = '#1d2733';
+        ctx.fillRect(0, 0, 512, 512);
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.14)';
+        ctx.lineWidth = 2;
+        for (let g = 0; g <= 512; g += 32) {
+          ctx.beginPath(); ctx.moveTo(g, 0); ctx.lineTo(g, 512); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(0, g); ctx.lineTo(512, g); ctx.stroke();
+        }
+      } else {
+        ctx.fillStyle = '#130e24';
+        ctx.fillRect(0, 0, 512, 512);
+        for (let i = 0; i < 160; i++) {
+          ctx.fillStyle = i % 3 === 0 ? '#fde047' : '#38bdf8';
+          ctx.beginPath();
+          ctx.arc(Math.random() * 512, Math.random() * 512, Math.random() * 1.8, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(4, 4);
+      return tex;
+    }
+
+    /**
+     * 5. INITIALIZE THREE.JS SCENE & LIGHTING
+     */
+    function initThreeScene() {
+      const container = document.getElementById('webgl-container');
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x10141c);
+      scene.fog = new THREE.FogExp2(0x10141c, 0.018);
+
+      camera = new THREE.PerspectiveCamera(46, window.innerWidth / window.innerHeight, 0.1, 140);
+      updateCameraTransform(1);
+
+      renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      container.appendChild(renderer.domElement);
+
+      // Academy Ambient + Warm Sunlight + Cool Rim Light
+      const hemiLight = new THREE.HemisphereLight(0xfffbeb, 0x1e293b, 0.72);
+      scene.add(hemiLight);
+
+      const dirLight = new THREE.DirectionalLight(0xfef3c7, 1.05);
+      dirLight.position.set(12, 22, 14);
+      dirLight.castShadow = true;
+      dirLight.shadow.mapSize.width = 1024;
+      dirLight.shadow.mapSize.height = 1024;
+      dirLight.shadow.camera.near = 2;
+      dirLight.shadow.camera.far = 55;
+      const d = 16;
+      dirLight.shadow.camera.left = -d;
+      dirLight.shadow.camera.right = d;
+      dirLight.shadow.camera.top = d;
+      dirLight.shadow.camera.bottom = -d;
+      scene.add(dirLight);
+
+      const rimLight = new THREE.PointLight(0x38bdf8, 0.7, 36);
+      rimLight.position.set(-12, 10, -10);
+      scene.add(rimLight);
+
+      mapGroup = new THREE.Group();
+      towersGroup = new THREE.Group();
+      enemiesGroup = new THREE.Group();
+      projectilesGroup = new THREE.Group();
+      fxGroup = new THREE.Group();
+      scene.add(mapGroup, towersGroup, enemiesGroup, projectilesGroup, fxGroup);
+
+      // Range preview ring
+      const ringGeo = new THREE.RingGeometry(0.95, 1.0, 48);
+      const ringMat = new THREE.MeshBasicMaterial({
+        color: 0xfacc15,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.65
+      });
+      game.rangeRingMesh = new THREE.Mesh(ringGeo, ringMat);
+      game.rangeRingMesh.rotation.x = -Math.PI / 2;
+      game.rangeRingMesh.position.y = 0.08;
+      game.rangeRingMesh.visible = false;
+      scene.add(game.rangeRingMesh);
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+      });
+    }
+
+    function updateCameraTransform(lerpFactor = 0.14) {
+      camOrbit.theta += (camOrbit.targetTheta - camOrbit.theta) * lerpFactor;
+      camOrbit.phi += (camOrbit.targetPhi - camOrbit.phi) * lerpFactor;
+      camOrbit.radius += (camOrbit.targetRadius - camOrbit.radius) * lerpFactor;
+
+      const sinPhi = Math.sin(camOrbit.phi);
+      camera.position.set(
+        camOrbit.lookAt.x + camOrbit.radius * sinPhi * Math.sin(camOrbit.theta),
+        camOrbit.lookAt.y + camOrbit.radius * Math.cos(camOrbit.phi),
+        camOrbit.lookAt.z + camOrbit.radius * sinPhi * Math.cos(camOrbit.theta)
+      );
+      camera.lookAt(camOrbit.lookAt);
+    }
+
+    /**
+     * 6. BUILD 3D MAP GEOMETRY (STONE WALLS, SHUTTERS, PATHWAY, TOWER OF TRUTH CORE)
+     */
+    function loadMap(mapId) {
+      const mapCfg = MAPS_DB.find(m => m.id === mapId) || MAPS_DB[0];
+      game.selectedMapId = mapCfg.id;
+      game.currentMap = mapCfg;
+
+      // Clear groups
+      [mapGroup, towersGroup, enemiesGroup, projectilesGroup, fxGroup].forEach(g => {
+        while (g.children.length > 0) g.remove(g.children[0]);
+      });
+
+      game.gold = 240;
+      game.lives = 20;
+      game.wave = 0;
+      game.maxWaves = mapCfg.waves;
+      game.waveActive = false;
+      game.spawnQueue = [];
+      game.spawnTimer = 0;
+      game.paused = false;
+      game.gameOver = false;
+      game.eurekaCharge = 50;
+      game.eurekaTimer = 0;
+      game.selectedBuildId = null;
+      game.selectedTower = null;
+      game.padMeshes = [];
+      game.towers = [];
+      game.enemies = [];
+      game.projectiles = [];
+      game.particles = [];
+      game.rangeRingMesh.visible = false;
+
+      // Ground Arena Slab
+      const groundTex = createStoneGroundTexture(mapCfg.theme);
+      const groundGeo = new THREE.BoxGeometry(26, 0.8, 20);
+      const groundMat = new THREE.MeshStandardMaterial({ map: groundTex, roughness: 0.85, metalness: 0.1 });
+      const ground = new THREE.Mesh(groundGeo, groundMat);
+      ground.position.y = -0.4;
+      ground.receiveShadow = true;
+      mapGroup.add(ground);
+
+      // European Academy Stone Perimeter Walls & Blue Wooden Shutters
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.9 });
+      const shutterMat = new THREE.MeshStandardMaterial({ color: 0x287496, roughness: 0.6 });
+      const trimMat = new THREE.MeshStandardMaterial({ color: 0xb47b2b, metalness: 0.4, roughness: 0.4 });
+
+      const backWall = new THREE.Mesh(new THREE.BoxGeometry(26.6, 2.2, 0.7), wallMat);
+      backWall.position.set(0, 1.1, -10.2);
+      backWall.castShadow = true;
+      backWall.receiveShadow = true;
+      mapGroup.add(backWall);
+
+      for (let x = -10; x <= 10; x += 4) {
+        const shutter = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.3, 0.2), shutterMat);
+        shutter.position.set(x, 1.2, -9.8);
+        mapGroup.add(shutter);
+
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(1.7, 1.5, 0.12), trimMat);
+        frame.position.set(x, 1.2, -9.85);
+        mapGroup.add(frame);
+      }
+
+      // Ivy bushes for Royal Academy Garden
+      if (mapCfg.theme === 'garden') {
+        const ivyMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.8 });
+        for (let i = 0; i < 18; i++) {
+          const bush = new THREE.Mesh(new THREE.DodecahedronGeometry(0.45 + Math.random() * 0.25), ivyMat);
+          bush.position.set(-11 + i * 1.3, 0.35, -9.5 + (i % 2) * 0.4);
+          bush.castShadow = true;
+          mapGroup.add(bush);
+        }
+      }
+
+      // Render Stone-Brick Path Segments
+      const pathMat = new THREE.MeshStandardMaterial({
+        color: mapCfg.theme === 'space' ? 0x312e81 : (mapCfg.theme === 'lab' ? 0x334155 : 0xa8a29e),
+        roughness: 0.75
+      });
+
+      mapCfg.paths.forEach(pts => {
+        for (let i = 0; i < pts.length - 1; i++) {
+          const [x1, z1] = pts[i];
+          const [x2, z2] = pts[i + 1];
+          const dx = x2 - x1;
+          const dz = z2 - z1;
+          const len = Math.hypot(dx, dz);
+          const seg = new THREE.Mesh(new THREE.BoxGeometry(len + 1.05, 0.14, 1.15), pathMat);
+          seg.position.set((x1 + x2) / 2, 0.05, (z1 + z2) / 2);
+          seg.rotation.y = -Math.atan2(dz, dx);
+          seg.receiveShadow = true;
+          mapGroup.add(seg);
+        }
+      });
+
+      // Double-Slit Divider Wall in Map 2
+      if (mapCfg.id === 'doubleslit') {
+        const barrierMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, metalness: 0.5, roughness: 0.3 });
+        const midWall = new THREE.Mesh(new THREE.BoxGeometry(0.7, 1.8, 5.2), barrierMat);
+        midWall.position.set(-4.5, 0.9, 0);
+        midWall.castShadow = true;
+        mapGroup.add(midWall);
+      }
+
+      // Tower of Truth Core at Path End
+      const lastPath = mapCfg.paths[0];
+      const [endX, endZ] = lastPath[lastPath.length - 1];
+      const coreGroup = new THREE.Group();
+      coreGroup.position.set(endX, 0, endZ);
+
+      const pedestal = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 1.4, 0.9, 8), wallMat);
+      pedestal.position.y = 0.45;
+      pedestal.castShadow = true;
+      coreGroup.add(pedestal);
+
+      const crystalMat = new THREE.MeshStandardMaterial({
+        color: mapCfg.id === 'blackhole' ? 0xf97316 : 0x38bdf8,
+        emissive: mapCfg.id === 'blackhole' ? 0xea580c : 0x0284c7,
+        emissiveIntensity: 0.85,
+        roughness: 0.2
+      });
+      game.coreCrystalMesh = new THREE.Mesh(new THREE.OctahedronGeometry(0.85, 0), crystalMat);
+      game.coreCrystalMesh.position.y = 1.95;
+      coreGroup.add(game.coreCrystalMesh);
+
+      if (mapCfg.id === 'blackhole') {
+        const disk = new THREE.Mesh(
+          new THREE.RingGeometry(1.1, 2.2, 32),
+          new THREE.MeshBasicMaterial({ color: 0xfb923c, side: THREE.DoubleSide, transparent: true, opacity: 0.75 })
+        );
+        disk.rotation.x = Math.PI / 2.3;
+        disk.position.y = 1.95;
+        coreGroup.add(disk);
+      }
+
+      mapGroup.add(coreGroup);
+
+      // Build Pads (Interactive Stone Sockets)
+      const padGeo = new THREE.CylinderGeometry(0.82, 0.94, 0.22, 8);
+      mapCfg.pads.forEach((coord, idx) => {
+        const padMat = new THREE.MeshStandardMaterial({
+          color: 0x44403c,
+          emissive: 0x000000,
+          roughness: 0.7
+        });
+        const padMesh = new THREE.Mesh(padGeo, padMat);
+        padMesh.position.set(coord[0], 0.11, coord[1]);
+        padMesh.receiveShadow = true;
+        padMesh.userData = { kind: 'pad', padIndex: idx, x: coord[0], z: coord[1], occupied: false, tower: null };
+        mapGroup.add(padMesh);
+        game.padMeshes.push(padMesh);
+      });
+
+      closeTowerInspector();
+      updateHUD();
+    }
+
+    /**
+     * 7. 3D PHYSICIST TOWER MESH GENERATOR (EVOLVES LV.1 -> LV.3)
+     */
+    function createTower3DMesh(phys, level = 1) {
+      const root = new THREE.Group();
+
+      // 1) Stone Pedestal Base
+      const baseMat = new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.85 });
+      const base = new THREE.Mesh(new THREE.CylinderGeometry(0.72, 0.85, 0.55, 8), baseMat);
+      base.position.y = 0.28;
+      base.castShadow = true;
+      base.receiveShadow = true;
+      root.add(base);
+
+      // Brass evolution crown ring for Lv.2 / Lv.3
+      if (level >= 2) {
+        const goldMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, metalness: 0.7, roughness: 0.25 });
+        const ring = new THREE.Mesh(new THREE.TorusGeometry(0.76, 0.06, 8, 24), goldMat);
+        ring.rotation.x = Math.PI / 2;
+        ring.position.y = 0.56;
+        root.add(ring);
+      }
+
+      // 2) Blue Wooden Shutter Column
+      const columnHeight = 0.75 + level * 0.22;
+      const shutterMat = new THREE.MeshStandardMaterial({ color: 0x287496, roughness: 0.55 });
+      const col = new THREE.Mesh(new THREE.BoxGeometry(0.76, columnHeight, 0.76), shutterMat);
+      col.position.y = 0.55 + columnHeight / 2;
+      col.castShadow = true;
+      root.add(col);
+
+      // 3) Dynamic Chalkboard Formula Sign attached to front
+      const boardTex = createChalkboardTexture(phys.formula, `${phys.shortName} Lv.${level}`, phys.color);
+      const signMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.86, 0.44),
+        new THREE.MeshBasicMaterial({ map: boardTex, side: THREE.DoubleSide })
+      );
+      signMesh.position.set(0, 0.92, 0.41);
+      root.add(signMesh);
+
+      // 4) Rotating Kinetic Apparatus Group
+      const kinetic = new THREE.Group();
+      const topY = 0.65 + columnHeight + 0.55;
+      kinetic.position.y = topY;
+
+      const accentMat = new THREE.MeshStandardMaterial({
+        color: phys.accentHex,
+        emissive: phys.accentHex,
+        emissiveIntensity: 0.45 + level * 0.15,
+        roughness: 0.25,
+        metalness: 0.3
+      });
+
+      if (phys.id === 'newton') {
+        const apple = new THREE.Mesh(new THREE.SphereGeometry(0.32 + level * 0.04, 16, 16), accentMat);
+        kinetic.add(apple);
+        for (let m = 0; m < level; m++) {
+          const moon = new THREE.Mesh(
+            new THREE.SphereGeometry(0.11, 10, 10),
+            new THREE.MeshStandardMaterial({ color: 0xe2e8f0 })
+          );
+          const ang = (Math.PI * 2 * m) / level;
+          moon.position.set(Math.cos(ang) * 0.62, 0.1, Math.sin(ang) * 0.62);
+          kinetic.add(moon);
+        }
+      } else if (phys.id === 'galileo') {
+        const barrel = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.2, 0.26, 0.85 + level * 0.15, 12),
+          new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7 })
+        );
+        barrel.rotation.z = Math.PI / 3;
+        kinetic.add(barrel);
+        const orb = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 12), accentMat);
+        orb.position.set(0.35, 0.25, 0);
+        kinetic.add(orb);
+      } else if (phys.id === 'hooke') {
+        for (let s = 0; s < 2 + level; s++) {
+          const coil = new THREE.Mesh(new THREE.TorusGeometry(0.34, 0.06, 8, 20), accentMat);
+          coil.rotation.x = Math.PI / 2;
+          coil.position.y = -0.25 + s * 0.16;
+          kinetic.add(coil);
+        }
+      } else if (phys.id === 'kelvin') {
+        const crystal = new THREE.Mesh(new THREE.OctahedronGeometry(0.42 + level * 0.06, 0), accentMat);
+        kinetic.add(crystal);
+      } else if (phys.id === 'faraday' || phys.id === 'maxwell') {
+        const r1 = new THREE.Mesh(new THREE.TorusGeometry(0.44, 0.06, 8, 24), accentMat);
+        kinetic.add(r1);
+        const r2 = new THREE.Mesh(
+          new THREE.TorusGeometry(0.36 + level * 0.05, 0.05, 8, 24),
+          new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xef4444, emissiveIntensity: 0.4 })
+        );
+        r2.rotation.y = Math.PI / 2;
+        kinetic.add(r2);
+      } else if (phys.id === 'rontgen' || phys.id === 'curie') {
+        const core = new THREE.Mesh(new THREE.IcosahedronGeometry(0.34 + level * 0.05, 0), accentMat);
+        kinetic.add(core);
+        const halo = new THREE.Mesh(
+          new THREE.TorusGeometry(0.55, 0.04, 6, 24),
+          new THREE.MeshBasicMaterial({ color: phys.accentHex })
+        );
+        halo.rotation.x = Math.PI / 2;
+        kinetic.add(halo);
+      } else if (phys.id === 'bohr') {
+        const nucleus = new THREE.Mesh(new THREE.SphereGeometry(0.22, 12, 12), accentMat);
+        kinetic.add(nucleus);
+        for (let o = 0; o < 1 + level; o++) {
+          const orbRing = new THREE.Mesh(new THREE.TorusGeometry(0.52, 0.03, 6, 24), accentMat);
+          orbRing.rotation.set(o * 0.9, o * 0.7, 0);
+          kinetic.add(orbRing);
+        }
+      } else if (phys.id === 'heisenberg') {
+        const p1 = new THREE.Mesh(new THREE.DodecahedronGeometry(0.32), accentMat);
+        p1.position.x = -0.22;
+        const p2 = new THREE.Mesh(new THREE.DodecahedronGeometry(0.28), accentMat);
+        p2.position.x = 0.24;
+        kinetic.add(p1, p2);
+      } else if (phys.id === 'einstein') {
+        const lens = new THREE.Mesh(new THREE.SphereGeometry(0.38 + level * 0.05, 16, 16), accentMat);
+        const disk = new THREE.Mesh(
+          new THREE.TorusGeometry(0.62, 0.05, 8, 28),
+          new THREE.MeshStandardMaterial({ color: 0xfacc15, emissive: 0xfacc15, emissiveIntensity: 0.6 })
+        );
+        disk.rotation.x = Math.PI / 2.4;
+        kinetic.add(lens, disk);
+      } else {
+        // Hawking black hole sphere + orange accretion disk
+        const hole = new THREE.Mesh(
+          new THREE.SphereGeometry(0.34 + level * 0.04, 16, 16),
+          new THREE.MeshBasicMaterial({ color: 0x050505 })
+        );
+        const accDisk = new THREE.Mesh(new THREE.RingGeometry(0.38, 0.72 + level * 0.08, 28), accentMat);
+        accDisk.rotation.x = Math.PI / 2.5;
+        kinetic.add(hole, accDisk);
+      }
+
+      root.add(kinetic);
+      root.userData.kinetic = kinetic;
+      return root;
+    }
+
+    /**
+     * 8. BUILD, UPGRADE, SELL & TOWER COMBAT LOGIC
+     */
+    function buildTowerOnPad(padMesh, physId) {
+      const phys = PHYSICISTS_DB.find(p => p.id === physId);
+      if (!phys) return;
+      if (padMesh.userData.occupied) {
+        selectTower(padMesh.userData.tower);
+        return;
+      }
+      if (game.gold < phys.cost) {
+        setStatusBanner(`💰 金幣不足！建造【${phys.name}】需要 $${phys.cost}`);
+        return;
+      }
+
+      game.gold -= phys.cost;
+      sfx.playBuild();
+
+      const mesh = createTower3DMesh(phys, 1);
+      mesh.position.set(padMesh.userData.x, 0.2, padMesh.userData.z);
+      mesh.traverse(child => {
+        child.userData.towerRef = null;
+      });
+      towersGroup.add(mesh);
+
+      const tower = {
+        uid: Math.random().toString(36).slice(2),
+        phys,
+        level: 1,
+        x: padMesh.userData.x,
+        z: padMesh.userData.z,
+        padMesh,
+        mesh,
+        dmg: phys.dmg,
+        range: phys.range,
+        cooldown: phys.cooldown,
+        timer: 0.2,
+        totalInvested: phys.cost,
+        totalDamageDealt: 0,
+        priority: 'first' // 'first' | 'strong' | 'close'
+      };
+
+      mesh.traverse(child => {
+        child.userData.towerRef = tower;
+      });
+      padMesh.userData.occupied = true;
+      padMesh.userData.tower = tower;
+      game.towers.push(tower);
+
+      spawn3DBurst(tower.x, 1.0, tower.z, phys.accentHex, 14);
+      spawnScreenPopup(tower.x, 1.5, tower.z, `-$${phys.cost}`, '#facc15');
+      setStatusBanner(`🏗️ 已建造【${phys.name} Lv.1】！點擊可升級或切換索敵模式。`);
+      selectTower(tower);
+      updateHUD();
+    }
+
+    function upgradeSelectedTower() {
+      const t = game.selectedTower;
+      if (!t || t.level >= 3) return;
+      const upCost = Math.round(t.phys.cost * (t.level === 1 ? 1.4 : 2.1));
+      if (game.gold < upCost) {
+        setStatusBanner(`💰 金幣不足！升級至 Lv.${t.level + 1} 需要 $${upCost}`);
+        return;
+      }
+
+      game.gold -= upCost;
+      t.totalInvested += upCost;
+      t.level += 1;
+      t.dmg = Math.round(t.dmg * 1.58);
+      t.range = +(t.range + 0.45).toFixed(2);
+      t.cooldown = +(t.cooldown * 0.88).toFixed(2);
+
+      // Replace 3D model with evolved Lv.2 / Lv.3 structure
+      towersGroup.remove(t.mesh);
+      const newMesh = createTower3DMesh(t.phys, t.level);
+      newMesh.position.set(t.x, 0.2, t.z);
+      newMesh.traverse(child => { child.userData.towerRef = t; });
+      towersGroup.add(newMesh);
+      t.mesh = newMesh;
+
+      sfx.playUpgrade();
+      spawn3DBurst(t.x, 1.3, t.z, 0xfacc15, 20);
+      spawnScreenPopup(t.x, 1.8, t.z, `⬆️ Lv.${t.level}!`, '#4ade80');
+      setStatusBanner(`✨ 【${t.phys.shortName}】已進化至 Lv.${t.level}！`);
+      selectTower(t);
+      updateHUD();
+    }
+
+    function sellSelectedTower() {
+      const t = game.selectedTower;
+      if (!t) return;
+      const refund = Math.round(t.totalInvested * 0.75);
+      game.gold += refund;
+
+      towersGroup.remove(t.mesh);
+      t.padMesh.userData.occupied = false;
+      t.padMesh.userData.tower = null;
+      game.towers = game.towers.filter(item => item !== t);
+
+      sfx.playClick();
+      spawnScreenPopup(t.x, 1.3, t.z, `+$${refund}`, '#4ade80');
+      setStatusBanner(`💰 已回收【${t.phys.shortName}】，返還 75% 資金 ($${refund})。`);
+      closeTowerInspector();
+      updateHUD();
+    }
+
+    function selectTower(tower) {
+      game.selectedTower = tower;
+      game.selectedBuildId = null;
+      refreshBuildDockSelection();
+
+      game.rangeRingMesh.position.set(tower.x, 0.12, tower.z);
+      game.rangeRingMesh.scale.set(tower.range, tower.range, 1);
+      game.rangeRingMesh.visible = true;
+
+      const insp = document.getElementById('tower-inspector');
+      insp.classList.remove('hidden');
+      document.getElementById('insp-name').textContent = tower.phys.name;
+      document.getElementById('insp-level').textContent = `Lv.${tower.level}`;
+      document.getElementById('insp-formula').textContent = tower.phys.formula;
+      document.getElementById('insp-desc').textContent = tower.phys.desc;
+      document.getElementById('insp-dmg').textContent = tower.dmg;
+      document.getElementById('insp-stats').textContent = `${tower.range}m / ${tower.cooldown}s`;
+      document.getElementById('insp-total-dmg').textContent = Math.round(tower.totalDamageDealt);
+
+      const prioLabels = {
+        first: '🎯 最接近終點',
+        strong: '❤️ 最高血量',
+        close: '📍 最近目標'
+      };
+      document.getElementById('btn-toggle-priority').textContent = prioLabels[tower.priority];
+
+      const upBtn = document.getElementById('btn-upgrade-tower');
+      if (tower.level >= 3) {
+        upBtn.textContent = '👑 已達最高 Lv.3';
+        upBtn.disabled = true;
+      } else {
+        const upCost = Math.round(tower.phys.cost * (tower.level === 1 ? 1.4 : 2.1));
+        upBtn.textContent = `⬆️ 升級 ($${upCost})`;
+        upBtn.disabled = game.gold < upCost;
+      }
+
+      const refund = Math.round(tower.totalInvested * 0.75);
+      document.getElementById('btn-sell-tower').textContent = `💰 出售 (+$${refund})`;
+    }
+
+    function closeTowerInspector() {
+      game.selectedTower = null;
+      game.rangeRingMesh.visible = false;
+      document.getElementById('tower-inspector').classList.add('hidden');
+    }
+
+    /**
+     * 9. 6 ENEMY TYPES & WAVE GENERATOR
+     */
+    const ENEMY_TYPES = {
+      slime: {
+        name: '迷思史萊姆', hpMult: 1.0, speed: 2.1, armor: 0, stealth: false, reward: 10, scale: 0.45, color: 0x22c55e
+      },
+      golem: {
+        name: '教條石像', hpMult: 2.2, speed: 1.35, armor: 0.48, stealth: false, reward: 16, scale: 0.65, color: 0x78716c
+      },
+      juggernaut: {
+        name: '阻力重裝車', hpMult: 3.1, speed: 1.5, armor: 0.25, stealth: false, reward: 22, scale: 0.72, color: 0xb45309
+      },
+      ghost: {
+        name: '量子幽靈', hpMult: 1.15, speed: 2.55, armor: 0, stealth: true, reward: 15, scale: 0.48, color: 0xa855f7
+      },
+      swarm: {
+        name: '熵增蜂群', hpMult: 0.55, speed: 3.3, armor: 0, stealth: false, reward: 7, scale: 0.32, color: 0xf43f5e
+      },
+      boss: {
+        name: '終極悖論巨像 Boss', hpMult: 13.5, speed: 1.05, armor: 0.35, stealth: false, reward: 95, scale: 1.15, color: 0xdc2626
+      }
+    };
+
+    function buildWaveQueue(waveNum) {
+      const q = [];
+      const count = 6 + waveNum * 2;
+      for (let i = 0; i < count; i++) {
+        let type = 'slime';
+        if (waveNum >= 2 && i % 4 === 2) type = 'swarm';
+        if (waveNum >= 3 && i % 5 === 3) type = 'golem';
+        if (waveNum >= 4 && i % 6 === 4) type = 'ghost';
+        if (waveNum >= 6 && i % 7 === 5) type = 'juggernaut';
+        q.push({ type, pathIdx: i % game.currentMap.paths.length });
+      }
+      if (waveNum % 5 === 0) {
+        q.push({ type: 'boss', pathIdx: 0 });
+      }
+      return q;
+    }
+
+    function startNextWave() {
+      if (game.waveActive || game.gameOver) return;
+      if (game.wave >= game.maxWaves) return;
+
+      game.wave += 1;
+      game.waveActive = true;
+      game.paused = false;
+      game.spawnQueue = buildWaveQueue(game.wave);
+      game.spawnTimer = 0.2;
+
+      if (game.wave % 5 === 0) {
+        setStatusBanner(`⚠️ 警告！第 ${game.wave} 波【終極悖論巨像 Boss】即將降臨！`);
+      } else {
+        setStatusBanner(`🌊 第 ${game.wave}/${game.maxWaves} 波知識保衛戰開始！`);
+      }
+      updateHUD();
+    }
+
+    function spawnEnemy(typeKey, pathIdx) {
+      const cfg = ENEMY_TYPES[typeKey];
+      const baseHp = 52 * Math.pow(1.22, game.wave - 1);
+      const maxHp = Math.round(baseHp * cfg.hpMult);
+
+      const pathPts = game.currentMap.paths[pathIdx % game.currentMap.paths.length];
+      const [sx, sz] = pathPts[0];
+
+      const group = new THREE.Group();
+      group.position.set(sx, 0.1, sz);
+
+      let bodyGeo;
+      if (typeKey === 'slime') bodyGeo = new THREE.SphereGeometry(cfg.scale, 14, 12);
+      else if (typeKey === 'golem' || typeKey === 'juggernaut') bodyGeo = new THREE.BoxGeometry(cfg.scale * 1.4, cfg.scale * 1.5, cfg.scale * 1.4);
+      else if (typeKey === 'ghost') bodyGeo = new THREE.ConeGeometry(cfg.scale, cfg.scale * 2.1, 8);
+      else if (typeKey === 'swarm') bodyGeo = new THREE.TetrahedronGeometry(cfg.scale * 1.2);
+      else bodyGeo = new THREE.DodecahedronGeometry(cfg.scale);
+
+      const mat = new THREE.MeshStandardMaterial({
+        color: cfg.color,
+        emissive: typeKey === 'boss' ? 0x7f1d1d : (cfg.stealth ? 0x581c87 : 0x000000),
+        emissiveIntensity: 0.45,
+        roughness: 0.4,
+        transparent: cfg.stealth,
+        opacity: cfg.stealth ? 0.35 : 1.0
+      });
+
+      const body = new THREE.Mesh(bodyGeo, mat);
+      body.position.y = cfg.scale + 0.15;
+      body.castShadow = true;
+      group.add(body);
+
+      if (typeKey === 'boss') {
+        const crown = new THREE.Mesh(
+          new THREE.TorusGeometry(cfg.scale * 0.9, 0.09, 8, 24),
+          new THREE.MeshBasicMaterial({ color: 0xfacc15 })
+        );
+        crown.rotation.x = Math.PI / 2;
+        crown.position.y = cfg.scale * 2.2;
+        group.add(crown);
+      }
+
+      // 3D HP Bar sprite above enemy
+      const hpBarBg = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.1, 0.14),
+        new THREE.MeshBasicMaterial({ color: 0x090d16, side: THREE.DoubleSide })
+      );
+      hpBarBg.position.y = cfg.scale * 2.3 + 0.35;
+      group.add(hpBarBg);
+
+      const hpBarFill = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.04, 0.1),
+        new THREE.MeshBasicMaterial({ color: typeKey === 'boss' ? 0xfacc15 : 0x22c55e, side: THREE.DoubleSide })
+      );
+      hpBarFill.position.set(0, cfg.scale * 2.3 + 0.35, 0.01);
+      group.add(hpBarFill);
+
+      enemiesGroup.add(group);
+
+      game.enemies.push({
+        uid: Math.random().toString(36).slice(2),
+        typeKey,
+        cfg,
+        hp: maxHp,
+        maxHp,
+        speed: cfg.speed,
+        armor: cfg.armor,
+        stealth: cfg.stealth,
+        revealed: !cfg.stealth,
+        pathPts,
+        waypointIdx: 1,
+        progressDist: 0,
+        slowTimer: 0,
+        slowFactor: 1,
+        stunTimer: 0,
+        radiationStacks: 0,
+        radTickTimer: 1.0,
+        mesh: group,
+        bodyMat: mat,
+        hpBarBg,
+        hpBarFill
+      });
+    }
+
+    /**
+     * 10. DAMAGE, PROJECTILES, 3D PARTICLES & EUREKA ULTIMATE
+     */
+    function applyDamageToEnemy(enemy, rawDmg, opts = {}) {
+      if (!enemy || enemy.hp <= 0) return;
+
+      if (opts.reveal && enemy.stealth && !enemy.revealed) {
+        enemy.revealed = true;
+        enemy.bodyMat.opacity = 0.92;
+        spawnScreenPopup(enemy.mesh.position.x, 1.3, enemy.mesh.position.z, '👁️ 顯形!', '#84cc16');
+      }
+
+      let finalDmg = rawDmg;
+      if (!opts.trueDamage && !opts.armorPierce && enemy.armor > 0) {
+        finalDmg = Math.max(1, Math.round(rawDmg * (1 - enemy.armor)));
+      } else {
+        finalDmg = Math.max(1, Math.round(rawDmg));
+      }
+
+      enemy.hp -= finalDmg;
+      if (opts.sourceTower) {
+        opts.sourceTower.totalDamageDealt += finalDmg;
+      }
+
+      if (opts.crit) {
+        spawnScreenPopup(enemy.mesh.position.x, 1.4, enemy.mesh.position.z, `💥 ${finalDmg}!`, '#f43f5e');
+      }
+
+      if (enemy.hp <= 0) {
+        killEnemy(enemy);
+      } else {
+        const ratio = Math.max(0.01, enemy.hp / enemy.maxHp);
+        enemy.hpBarFill.scale.x = ratio;
+        enemy.hpBarFill.position.x = -(1 - ratio) * 0.52;
+      }
+    }
+
+    function killEnemy(enemy) {
+      if (!game.enemies.includes(enemy)) return;
+      game.enemies = game.enemies.filter(e => e !== enemy);
+      enemiesGroup.remove(enemy.mesh);
+
+      game.gold += enemy.cfg.reward;
+      game.eurekaCharge = Math.min(100, game.eurekaCharge + (enemy.typeKey === 'boss' ? 40 : 6));
+      sfx.playKill();
+      spawn3DBurst(enemy.mesh.position.x, 0.7, enemy.mesh.position.z, enemy.cfg.color, 12);
+      spawnScreenPopup(enemy.mesh.position.x, 1.2, enemy.mesh.position.z, `+$${enemy.cfg.reward}`, '#fde047');
+      updateHUD();
+    }
+
+    function triggerEurekaUltimate() {
+      if (game.gameOver) return;
+      if (game.eurekaCharge < 100) {
+        if (game.gold < 150) {
+          setStatusBanner('⚡ 靈感大爆發需充能 100% 或花費 $150 金幣啟動！');
+          return;
+        }
+        game.gold -= 150;
+      } else {
+        game.eurekaCharge = 0;
+      }
+
+      game.eurekaTimer = 8.0;
+      sfx.playEureka();
+      setStatusBanner('⚡【靈感大爆發 Eureka!】全場攻速翻倍 8 秒＋揭露所有量子幽靈！');
+
+      // Golden academy shockwave across all enemies & towers
+      game.towers.forEach(t => spawn3DBurst(t.x, 1.4, t.z, 0xfacc15, 14));
+      [...game.enemies].forEach(e => {
+        e.revealed = true;
+        e.bodyMat.opacity = 0.95;
+        applyDamageToEnemy(e, 35 + game.wave * 8, { trueDamage: true, reveal: true });
+      });
+      updateHUD();
+    }
+
+    function spawn3DBurst(x, y, z, colorHex, count = 10) {
+      const geo = new THREE.BoxGeometry(0.14, 0.14, 0.14);
+      const mat = new THREE.MeshBasicMaterial({ color: colorHex });
+      for (let i = 0; i < count; i++) {
+        const m = new THREE.Mesh(geo, mat);
+        m.position.set(x, y, z);
+        fxGroup.add(m);
+        const ang = Math.random() * Math.PI * 2;
+        const spd = 1.5 + Math.random() * 3.5;
+        game.particles.push({
+          mesh: m,
+          vx: Math.cos(ang) * spd,
+          vy: 2.2 + Math.random() * 3.2,
+          vz: Math.sin(ang) * spd,
+          life: 0.55
+        });
+      }
+    }
+
+    function spawnBeamLine(p1, p2, colorHex) {
+      const geo = new THREE.BufferGeometry().setFromPoints([p1, p2]);
+      const mat = new THREE.LineBasicMaterial({ color: colorHex });
+      const line = new THREE.Line(geo, mat);
+      fxGroup.add(line);
+      game.particles.push({ mesh: line, vx: 0, vy: 0, vz: 0, life: 0.16, isLine: true });
+    }
+
+    function spawnScreenPopup(wx, wy, wz, text, color) {
+      const container = document.getElementById('floating-popups');
+      if (!container || container.children.length > 22) return;
+      const vec = new THREE.Vector3(wx, wy, wz).project(camera);
+      const sx = (vec.x * 0.5 + 0.5) * window.innerWidth;
+      const sy = (-vec.y * 0.5 + 0.5) * window.innerHeight;
+      if (sx < 0 || sx > window.innerWidth || sy < 0 || sy > window.innerHeight) return;
+
+      const el = document.createElement('div');
+      el.className = 'floating-label text-xs sm:text-sm';
+      el.style.left = `${sx}px`;
+      el.style.top = `${sy}px`;
+      el.style.color = color;
+      el.textContent = text;
+      container.appendChild(el);
+      setTimeout(() => el.remove(), 950);
+    }
+
+    /**
+     * 11. MAIN SIMULATION STEP (TOWERS, ENEMIES, PROJECTILES)
+     */
+    function updateSimulation(dt) {
+      // Animate core crystal & tower kinetic apparatus
+      if (game.coreCrystalMesh) {
+        game.coreCrystalMesh.rotation.y += dt * 1.4;
+        game.coreCrystalMesh.position.y = 1.95 + Math.sin(performance.now() * 0.003) * 0.12;
+      }
+
+      game.towers.forEach(t => {
+        if (t.mesh && t.mesh.userData.kinetic) {
+          t.mesh.userData.kinetic.rotation.y += dt * (1.8 + t.level * 0.4);
+        }
+      });
+
+      // Highlight available build pads when a tower card is selected
+      game.padMeshes.forEach(pad => {
+        if (game.selectedBuildId && !pad.userData.occupied) {
+          pad.material.emissive.setHex(0x16a34a);
+          pad.material.emissiveIntensity = 0.55 + Math.sin(performance.now() * 0.008) * 0.25;
+        } else {
+          pad.material.emissive.setHex(0x000000);
+        }
+      });
+
+      // Update 3D particles & beams
+      for (let i = game.particles.length - 1; i >= 0; i--) {
+        const p = game.particles[i];
+        p.life -= dt;
+        if (p.life <= 0) {
+          fxGroup.remove(p.mesh);
+          game.particles.splice(i, 1);
+          continue;
+        }
+        if (!p.isLine) {
+          p.mesh.position.x += p.vx * dt;
+          p.mesh.position.y += p.vy * dt;
+          p.mesh.position.z += p.vz * dt;
+          p.vy -= 9.8 * dt;
+        }
+      }
+
+      if (game.paused || game.gameOver) return;
+      const simDt = dt * game.gameSpeed;
+
+      if (game.eurekaTimer > 0) {
+        game.eurekaTimer = Math.max(0, game.eurekaTimer - simDt);
+      }
+
+      // Spawn enemies from wave queue
+      if (game.waveActive && game.spawnQueue.length > 0) {
+        game.spawnTimer -= simDt;
+        if (game.spawnTimer <= 0) {
+          const next = game.spawnQueue.shift();
+          spawnEnemy(next.type, next.pathIdx);
+          game.spawnTimer = next.type === 'swarm' ? 0.35 : 0.78;
+        }
+      }
+
+      // Move enemies & tick radiation DoT
+      for (let i = game.enemies.length - 1; i >= 0; i--) {
+        const e = game.enemies[i];
+        if (e.hp <= 0) continue;
+
+        // Billboard HP bar to camera
+        e.hpBarBg.quaternion.copy(camera.quaternion);
+        e.hpBarFill.quaternion.copy(camera.quaternion);
+
+        // Marie Curie stackable radiation true damage
+        if (e.radiationStacks > 0) {
+          e.radTickTimer -= simDt;
+          if (e.radTickTimer <= 0) {
+            e.radTickTimer = 1.0;
+            applyDamageToEnemy(e, e.radiationStacks * 6, { trueDamage: true });
+            if (e.hp <= 0) continue;
+          }
+        }
+
+        if (e.stunTimer > 0) {
+          e.stunTimer -= simDt;
+          continue;
+        }
+
+        if (e.slowTimer > 0) {
+          e.slowTimer -= simDt;
+          if (e.slowTimer <= 0) e.slowFactor = 1;
+        }
+
+        const targetPt = e.pathPts[e.waypointIdx];
+        if (!targetPt) continue;
+
+        const dx = targetPt[0] - e.mesh.position.x;
+        const dz = targetPt[1] - e.mesh.position.z;
+        const dist = Math.hypot(dx, dz);
+        const step = e.speed * e.slowFactor * simDt;
+
+        if (dist <= step) {
+          e.mesh.position.x = targetPt[0];
+          e.mesh.position.z = targetPt[1];
+          e.progressDist += dist;
+          e.waypointIdx += 1;
+
+          // Reached Tower of Truth!
+          if (e.waypointIdx >= e.pathPts.length) {
+            game.enemies.splice(i, 1);
+            enemiesGroup.remove(e.mesh);
+            const leakDmg = e.typeKey === 'boss' ? 5 : 1;
+            game.lives = Math.max(0, game.lives - leakDmg);
+            sfx.playLeak();
+            setStatusBanner(`⚠️ 【${e.cfg.name}】突破防線！真理之塔生命 -${leakDmg}`);
+            updateHUD();
+            if (game.lives <= 0) {
+              endGame(false);
+              return;
+            }
+          }
+        } else {
+          e.mesh.position.x += (dx / dist) * step;
+          e.mesh.position.z += (dz / dist) * step;
+          e.progressDist += step;
+        }
+      }
+
+      // Check Wave Completion
+      if (game.waveActive && game.spawnQueue.length === 0 && game.enemies.length === 0) {
+        game.waveActive = false;
+        const waveBonus = 25 + game.wave * 5;
+        game.gold += waveBonus;
+        sfx.playBuild();
+        if (game.wave >= game.maxWaves) {
+          endGame(true);
+          return;
+        } else {
+          setStatusBanner(`🎉 第 ${game.wave} 波防禦成功！獲得獎勵 +$${waveBonus}`);
+          updateHUD();
+        }
+      }
+
+      // Towers Target Acquisition & Firing
+      game.towers.forEach(t => {
+        // Faraday nearby attack speed aura check
+        let auraMult = 1.0;
+        if (game.eurekaTimer > 0) auraMult *= 2.0;
+        const hasFaradayBoost = game.towers.some(other => other !== t && other.phys.id === 'faraday' && Math.hypot(other.x - t.x, other.z - t.z) <= 3.6);
+        if (hasFaradayBoost) auraMult *= 1.2;
+
+        t.timer -= simDt * auraMult;
+        if (t.timer > 0) return;
+
+        // Filter enemies in range (and visible to this tower)
+        const candidates = game.enemies.filter(e => {
+          if (e.hp <= 0) return false;
+          if (!e.revealed && !t.phys.antiStealth) return false;
+          return Math.hypot(e.mesh.position.x - t.x, e.mesh.position.z - t.z) <= t.range;
+        });
+
+        if (candidates.length === 0) return;
+
+        if (t.priority === 'first') candidates.sort((a, b) => b.progressDist - a.progressDist);
+        else if (t.priority === 'strong') candidates.sort((a, b) => b.hp - a.hp);
+        else candidates.sort((a, b) => Math.hypot(a.mesh.position.x - t.x, a.mesh.position.z - t.z) - Math.hypot(b.mesh.position.x - t.x, b.mesh.position.z - t.z));
+
+        const target = candidates[0];
+        t.timer = t.cooldown;
+        fireTowerWeapon(t, target);
+      });
+
+      // Refresh selected tower inspector stats live
+      if (game.selectedTower) {
+        document.getElementById('insp-total-dmg').textContent = Math.round(game.selectedTower.totalDamageDealt);
+      }
+    }
+
+    function fireTowerWeapon(t, target) {
+      const p1 = new THREE.Vector3(t.x, 1.65, t.z);
+      const p2 = new THREE.Vector3(target.mesh.position.x, 0.65, target.mesh.position.z);
+      const id = t.phys.id;
+
+      if (id === 'newton') {
+        sfx.playShoot('kinetic');
+        spawnBeamLine(p1, p2, 0xef4444);
+        target.slowTimer = 2.0;
+        target.slowFactor = 0.7;
+        applyDamageToEnemy(target, t.dmg, { sourceTower: t });
+      } else if (id === 'galileo') {
+        sfx.playShoot('boom');
+        spawnBeamLine(p1, p2, 0xf59e0b);
+        target.stunTimer = Math.max(target.stunTimer, 0.55);
+        applyDamageToEnemy(target, t.dmg, { armorPierce: true, sourceTower: t });
+      } else if (id === 'hooke') {
+        sfx.playShoot('kinetic');
+        let prevPos = p1;
+        let cur = target;
+        const hitSet = new Set();
+        for (let bounce = 0; bounce < 2 + t.level; bounce++) {
+          if (!cur) break;
+          hitSet.add(cur);
+          const curPos = new THREE.Vector3(cur.mesh.position.x, 0.65, cur.mesh.position.z);
+          spawnBeamLine(prevPos, curPos, 0xeab308);
+          applyDamageToEnemy(cur, Math.round(t.dmg * Math.pow(0.82, bounce)), { sourceTower: t });
+          prevPos = curPos;
+          cur = game.enemies.find(e => !hitSet.has(e) && e.revealed && Math.hypot(e.mesh.position.x - curPos.x, e.mesh.position.z - curPos.z) <= 3.0);
+        }
+      } else if (id === 'kelvin') {
+        sfx.playShoot('ice');
+        spawn3DBurst(p2.x, 0.6, p2.z, 0x22d3ee, 8);
+        game.enemies.forEach(e => {
+          if (Math.hypot(e.mesh.position.x - p2.x, e.mesh.position.z - p2.z) <= 2.3) {
+            e.slowTimer = 2.4;
+            e.slowFactor = 0.55;
+            if (t.level >= 2 && Math.random() < 0.22) e.stunTimer = 0.75;
+            applyDamageToEnemy(e, t.dmg, { sourceTower: t });
+          }
+        });
+      } else if (id === 'faraday') {
+        sfx.playShoot('laser');
+        const chain = game.enemies.filter(e => e.revealed && Math.hypot(e.mesh.position.x - t.x, e.mesh.position.z - t.z) <= t.range).slice(0, 2 + t.level);
+        chain.forEach(e => {
+          spawnBeamLine(p1, new THREE.Vector3(e.mesh.position.x, 0.65, e.mesh.position.z), 0x38bdf8);
+          applyDamageToEnemy(e, t.dmg, { sourceTower: t });
+        });
+      } else if (id === 'maxwell') {
+        sfx.playShoot('laser');
+        const dir = new THREE.Vector2(p2.x - p1.x, p2.z - p1.z).normalize();
+        const endPt = new THREE.Vector3(p1.x + dir.x * t.range * 1.25, 0.65, p1.z + dir.y * t.range * 1.25);
+        spawnBeamLine(p1, endPt, 0x3b82f6);
+        game.enemies.forEach(e => {
+          if (!e.revealed) return;
+          const ex = e.mesh.position.x - p1.x;
+          const ez = e.mesh.position.z - p1.z;
+          const proj = ex * dir.x + ez * dir.y;
+          if (proj > 0 && proj <= t.range * 1.25) {
+            const perp = Math.abs(ex * dir.y - ez * dir.x);
+            if (perp <= 0.95) applyDamageToEnemy(e, t.dmg, { sourceTower: t });
+          }
+        });
+      } else if (id === 'rontgen') {
+        sfx.playShoot('laser');
+        spawnBeamLine(p1, p2, 0x84cc16);
+        applyDamageToEnemy(target, t.dmg, { armorPierce: true, reveal: true, sourceTower: t });
+      } else if (id === 'curie') {
+        sfx.playShoot('laser');
+        spawnBeamLine(p1, p2, 0x22c55e);
+        target.radiationStacks += t.level;
+        applyDamageToEnemy(target, t.dmg, { trueDamage: true, sourceTower: t });
+      } else if (id === 'bohr') {
+        sfx.playShoot('laser');
+        spawnBeamLine(p1, p2, 0x06b6d4);
+        applyDamageToEnemy(target, t.dmg, { reveal: true, sourceTower: t });
+      } else if (id === 'heisenberg') {
+        sfx.playShoot('laser');
+        spawnBeamLine(p1, p2, 0xf43f5e);
+        const mult = 1 + Math.random() * (1.8 + t.level * 0.4);
+        applyDamageToEnemy(target, t.dmg * mult, { crit: mult > 2.2, sourceTower: t });
+        // 22% chance to quantum-tunnel enemy backward along path
+        if (target.hp > 0 && target.typeKey !== 'boss' && Math.random() < 0.22 && target.waypointIdx > 1) {
+          target.waypointIdx -= 1;
+          const backPt = target.pathPts[target.waypointIdx];
+          target.mesh.position.x = backPt[0];
+          target.mesh.position.z = backPt[1];
+          spawnScreenPopup(backPt[0], 1.3, backPt[1], '🌀 量子隧穿!', '#f43f5e');
+        }
+      } else if (id === 'einstein') {
+        sfx.playShoot('boom');
+        spawn3DBurst(p2.x, 0.7, p2.z, 0xa855f7, 16);
+        game.enemies.forEach(e => {
+          if (Math.hypot(e.mesh.position.x - p2.x, e.mesh.position.z - p2.z) <= 2.4) {
+            applyDamageToEnemy(e, t.dmg, { sourceTower: t });
+          }
+        });
+      } else if (id === 'hawking') {
+        sfx.playShoot('boom');
+        spawn3DBurst(p2.x, 0.6, p2.z, 0xfb923c, 12);
+        game.enemies.forEach(e => {
+          const d = Math.hypot(e.mesh.position.x - p2.x, e.mesh.position.z - p2.z);
+          if (d <= 2.6) {
+            // Pull enemy slightly toward black hole singularity center
+            e.mesh.position.x += (p2.x - e.mesh.position.x) * 0.22;
+            e.mesh.position.z += (p2.z - e.mesh.position.z) * 0.22;
+            applyDamageToEnemy(e, t.dmg, { trueDamage: true, sourceTower: t });
+          }
+        });
+      }
+    }
+
+    function endGame(victory) {
+      game.gameOver = true;
+      game.waveActive = false;
+      if (victory) sfx.playVictory();
+      else sfx.playLeak();
+
+      // Determine MVP Physicist (highest totalDamageDealt)
+      let mvp = PHYSICISTS_DB[0];
+      if (game.towers.length > 0) {
+        const bestTower = [...game.towers].sort((a, b) => b.totalDamageDealt - a.totalDamageDealt)[0];
+        mvp = bestTower.phys;
+      }
+
+      document.getElementById('result-title').textContent = victory
+        ? '🏆 真理之塔守護成功！'
+        : '💥 真理之塔失守，重整實驗陣線！';
+      document.getElementById('result-subtitle').textContent =
+        `本局 MVP 物理學家：【${mvp.name}】— 點擊下方閃卡翻面閱讀歷史冷知識！`;
+
+      const slot = document.getElementById('result-mvp-slot');
+      slot.innerHTML = '';
+      slot.appendChild(createPhysgram3DCard(mvp));
+
+      document.getElementById('result-modal').classList.remove('hidden');
+    }
+
+    /**
+     * 12. CAMERA ORBIT & TAP-VS-DRAG RAYCASTING CONTROLS
+     */
+    function bindCanvasControls() {
+      const el = renderer.domElement;
+      let dragging = false;
+      let downX = 0;
+      let downY = 0;
+      let prevX = 0;
+      let prevY = 0;
+      let pinchStartDist = 0;
+
+      el.addEventListener('pointerdown', (e) => {
+        sfx.init();
+        dragging = true;
+        downX = prevX = e.clientX;
+        downY = prevY = e.clientY;
+      });
+
+      window.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const dx = e.clientX - prevX;
+        const dy = e.clientY - prevY;
+        prevX = e.clientX;
+        prevY = e.clientY;
+
+        camOrbit.targetTheta -= dx * 0.0065;
+        camOrbit.targetPhi = Math.max(0.28, Math.min(1.38, camOrbit.targetPhi - dy * 0.0065));
+      });
+
+      window.addEventListener('pointerup', (e) => {
+        if (!dragging) return;
+        dragging = false;
+        const moveDist = Math.hypot(e.clientX - downX, e.clientY - downY);
+        if (moveDist < 9) {
+          handleCanvasTap(e.clientX, e.clientY);
+        }
+      });
+
+      el.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        camOrbit.targetRadius = Math.max(10, Math.min(34, camOrbit.targetRadius + e.deltaY * 0.012));
+      }, { passive: false });
+
+      el.addEventListener('touchstart', (e) => {
+        if (e.touches.length === 2) {
+          pinchStartDist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+        }
+      }, { passive: true });
+
+      el.addEventListener('touchmove', (e) => {
+        if (e.touches.length === 2 && pinchStartDist > 0) {
+          const dist = Math.hypot(
+            e.touches[0].clientX - e.touches[1].clientX,
+            e.touches[0].clientY - e.touches[1].clientY
+          );
+          const delta = pinchStartDist - dist;
+          pinchStartDist = dist;
+          camOrbit.targetRadius = Math.max(10, Math.min(34, camOrbit.targetRadius + delta * 0.04));
+        }
+      }, { passive: true });
+    }
+
+    function handleCanvasTap(clientX, clientY) {
+      pointerNDC.x = (clientX / window.innerWidth) * 2 - 1;
+      pointerNDC.y = -(clientY / window.innerHeight) * 2 + 1;
+      raycaster.setFromCamera(pointerNDC, camera);
+
+      // 1) Check if tapping an existing tower
+      const towerHits = raycaster.intersectObjects(towersGroup.children, true);
+      if (towerHits.length > 0) {
+        const hitObj = towerHits[0].object;
+        if (hitObj.userData && hitObj.userData.towerRef) {
+          sfx.playClick();
+          selectTower(hitObj.userData.towerRef);
+          return;
+        }
+      }
+
+      // 2) Check if tapping a build pad
+      const padHits = raycaster.intersectObjects(game.padMeshes, false);
+      if (padHits.length > 0) {
+        const pad = padHits[0].object;
+        if (pad.userData.occupied && pad.userData.tower) {
+          sfx.playClick();
+          selectTower(pad.userData.tower);
+        } else if (game.selectedBuildId) {
+          buildTowerOnPad(pad, game.selectedBuildId);
+        } else {
+          setStatusBanner('💡 請先點擊底部「物理學家卡片」，再點擊此綠色基座建造！');
+        }
+        return;
+      }
+
+      // 3) Tapped empty ground -> deselect inspector
+      if (game.selectedTower) {
+        closeTowerInspector();
+      }
+    }
+
+    /**
+     * 13. UI BUILDERS: DOCK, MAP CARDS, HUD & PHYSGRAM 3D FLIP CARDS
+     */
+    function setStatusBanner(msg) {
+      const el = document.getElementById('status-banner');
+      if (el) el.textContent = msg;
+    }
+
+    function updateHUD() {
+      document.getElementById('hud-lives').textContent = game.lives;
+      document.getElementById('hud-gold').textContent = game.gold;
+      document.getElementById('hud-wave').textContent = `${game.wave}/${game.maxWaves}`;
+      document.getElementById('hud-eureka-pct').textContent = Math.floor(game.eurekaCharge);
+
+      const eurekaBtn = document.getElementById('btn-eureka');
+      eurekaBtn.classList.toggle('eureka-ready', game.eurekaCharge >= 100);
+
+      const waveBtn = document.getElementById('btn-wave-action');
+      if (game.wave >= game.maxWaves && !game.waveActive) {
+        waveBtn.textContent = '🏆 戰役完成';
+        waveBtn.disabled = true;
+      } else if (game.waveActive) {
+        waveBtn.disabled = false;
+        waveBtn.textContent = game.paused ? '▶️ 繼續戰鬥' : '⏸️ 暫停';
+      } else {
+        waveBtn.disabled = false;
+        waveBtn.textContent = `▶️ 開始第 ${game.wave + 1} 波`;
+      }
+
+      // Update dock affordability styling
+      PHYSICISTS_DB.forEach(p => {
+        const btn = document.getElementById(`dock-card-${p.id}`);
+        if (btn) {
+          btn.classList.toggle('opacity-55', game.gold < p.cost);
+        }
+      });
+
+      if (game.selectedTower) selectTower(game.selectedTower);
+    }
+
+    function buildTowerDockUI() {
+      const dock = document.getElementById('tower-dock');
+      dock.innerHTML = '';
+
+      PHYSICISTS_DB.forEach(p => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.id = `dock-card-${p.id}`;
+        btn.className = 'tower-card-btn shrink-0 w-24 sm:w-28 rounded-xl bg-stone-950/95 border-2 border-stone-700 p-1.5 text-left flex flex-col justify-between';
+        btn.innerHTML = `
+          <div class="flex items-center justify-between">
+            <span class="font-black text-xs text-amber-300 truncate">${p.shortName}</span>
+            <span class="font-arcade text-[10px] text-emerald-300">$${p.cost}</span>
+          </div>
+          <div class="text-[9px] font-tech text-cyan-300 truncate my-0.5">${p.formula}</div>
+          <div class="text-[9px] text-stone-300 truncate">${p.role}</div>
+        `;
+        btn.addEventListener('click', () => {
+          sfx.playClick();
+          closeTowerInspector();
+          game.selectedBuildId = (game.selectedBuildId === p.id) ? null : p.id;
+          refreshBuildDockSelection();
+          if (game.selectedBuildId) {
+            setStatusBanner(`🏗️ 已選取【${p.name}】($${p.cost}) — 點擊戰場綠色基座建造！`);
+          } else {
+            setStatusBanner('點擊下方物理學家卡片，再點擊戰場綠色基座建造防禦塔！');
+          }
+        });
+        dock.appendChild(btn);
+      });
+    }
+
+    function refreshBuildDockSelection() {
+      document.getElementById('btn-cancel-build').classList.toggle('hidden', !game.selectedBuildId);
+      PHYSICISTS_DB.forEach(p => {
+        const el = document.getElementById(`dock-card-${p.id}`);
+        if (el) el.classList.toggle('tower-card-selected', game.selectedBuildId === p.id);
+      });
+    }
+
+    function buildMapSelectGrid() {
+      const grid = document.getElementById('map-select-grid');
+      grid.innerHTML = '';
+      MAPS_DB.forEach(m => {
+        const card = document.createElement('button');
+        card.type = 'button';
+        card.id = `map-card-${m.id}`;
+        card.className = `btn p-3 rounded-2xl border-2 text-left bg-stone-950 flex flex-col justify-between ${m.id === game.selectedMapId ? 'border-amber-400 ring-2 ring-amber-400/50' : 'border-stone-700'}`;
+        card.innerHTML = `
+          <div>
+            <div class="flex items-center justify-between gap-1">
+              <span class="font-black text-xs sm:text-sm text-amber-300">${m.name}</span>
+              <span class="px-2 py-0.5 rounded-full bg-sky-950 text-sky-300 font-tech text-[10px]">共 ${m.waves} 波</span>
+            </div>
+            <p class="text-[11px] text-stone-300 mt-1.5 leading-relaxed">${m.desc}</p>
+          </div>
+        `;
+        card.addEventListener('click', () => {
+          sfx.playClick();
+          game.selectedMapId = m.id;
+          MAPS_DB.forEach(other => {
+            const el = document.getElementById(`map-card-${other.id}`);
+            if (el) {
+              el.className = `btn p-3 rounded-2xl border-2 text-left bg-stone-950 flex flex-col justify-between ${other.id === m.id ? 'border-amber-400 ring-2 ring-amber-400/50' : 'border-stone-700'}`;
+            }
+          });
+        });
+        grid.appendChild(card);
+      });
+    }
+
+    function createPhysgram3DCard(phys) {
+      const wrap = document.createElement('div');
+      wrap.className = 'flip-perspective h-64 sm:h-72';
+      wrap.innerHTML = `
+        <div class="flip-inner">
+          <div class="flip-face rounded-2xl bg-gradient-to-b from-stone-800 to-stone-950 border-2 border-amber-500 p-3 flex flex-col justify-between shadow-xl">
+            <div class="flex items-center justify-between text-[10px] font-tech text-cyan-300">
+              <span>${phys.formula}</span>
+              <span class="px-1.5 py-0.5 bg-amber-500/20 text-amber-300 rounded">3D 翻牌 🔄</span>
+            </div>
+            <div class="my-auto text-center space-y-1">
+              <div class="w-12 h-12 mx-auto rounded-2xl flex items-center justify-center text-2xl font-black border border-amber-400/60" style="background:${phys.color}33; color:${phys.color}">
+                ⚛️
+              </div>
+              <div class="font-black text-sm sm:text-base text-amber-300">${phys.name}</div>
+              <div class="text-[10px] font-tech text-stone-400">${phys.years} ｜ $${phys.cost}</div>
+              <p class="text-[11px] text-stone-200 leading-snug line-clamp-3 pt-1">${phys.desc}</p>
+            </div>
+            <div class="text-center text-[10px] text-amber-300/80 font-bold">點擊翻面查看歷史冷知識</div>
+          </div>
+          <div class="flip-face flip-back rounded-2xl bg-gradient-to-br from-amber-950 via-stone-900 to-sky-950 border-2 border-cyan-400 p-3 flex flex-col justify-between text-left shadow-xl">
+            <div class="flex items-center justify-between border-b border-amber-500/40 pb-1">
+              <span class="font-black text-xs text-amber-300">💡 Physgram 冷知識</span>
+              <span class="text-[10px] text-cyan-300">翻回正面 ↩️</span>
+            </div>
+            <p class="text-[11px] sm:text-xs text-amber-100 leading-relaxed my-auto">
+              ${phys.trivia}
+            </p>
+            <div class="text-[10px] font-tech text-cyan-300 text-right">${phys.shortName} (${phys.years})</div>
+          </div>
+        </div>
+      `;
+      const inner = wrap.querySelector('.flip-inner');
+      wrap.addEventListener('click', () => {
+        sfx.playClick();
+        inner.classList.toggle('is-flipped');
+      });
+      return wrap;
+    }
+
+    function openEncyclopediaModal(focusPhysId = null) {
+      sfx.playClick();
+      const grid = document.getElementById('encyclopedia-grid');
+      grid.innerHTML = '';
+      PHYSICISTS_DB.forEach(p => {
+        const card = createPhysgram3DCard(p);
+        if (focusPhysId && p.id === focusPhysId) {
+          setTimeout(() => card.querySelector('.flip-inner').classList.add('is-flipped'), 180);
+        }
+        grid.appendChild(card);
+      });
+      document.getElementById('encyclopedia-modal').classList.remove('hidden');
+    }
+
+    /**
+     * 14. BIND UI EVENTS & MAIN RENDER LOOP
+     */
+    function bindUIEvents() {
+      document.getElementById('btn-start-game').addEventListener('click', () => {
+        sfx.playClick();
+        document.getElementById('menu-modal').classList.add('hidden');
+        loadMap(game.selectedMapId);
+      });
+
+      document.getElementById('btn-open-menu').addEventListener('click', () => {
+        sfx.playClick();
+        document.getElementById('menu-modal').classList.remove('hidden');
+      });
+
+      document.getElementById('btn-cam-tactical').addEventListener('click', () => {
+        sfx.playClick();
+        camOrbit.targetTheta = 0.35; camOrbit.targetPhi = 0.78; camOrbit.targetRadius = 21;
+      });
+      document.getElementById('btn-cam-top').addEventListener('click', () => {
+        sfx.playClick();
+        camOrbit.targetTheta = 0.01; camOrbit.targetPhi = 0.28; camOrbit.targetRadius = 23;
+      });
+      document.getElementById('btn-cam-low').addEventListener('click', () => {
+        sfx.playClick();
+        camOrbit.targetTheta = 0.55; camOrbit.targetPhi = 1.18; camOrbit.targetRadius = 15;
+      });
+
+      document.getElementById('btn-wave-action').addEventListener('click', () => {
+        sfx.playClick();
+        if (!game.waveActive) {
+          startNextWave();
+        } else {
+          game.paused = !game.paused;
+          updateHUD();
+        }
+      });
+
+      document.getElementById('btn-speed').addEventListener('click', () => {
+        sfx.playClick();
+        game.gameSpeed = game.gameSpeed === 1 ? 2 : 1;
+        document.getElementById('btn-speed').textContent = `⏩ ${game.gameSpeed}x`;
+      });
+
+      document.getElementById('btn-eureka').addEventListener('click', triggerEurekaUltimate);
+
+      document.getElementById('btn-cancel-build').addEventListener('click', () => {
+        sfx.playClick();
+        game.selectedBuildId = null;
+        refreshBuildDockSelection();
+      });
+
+      document.getElementById('btn-close-inspector').addEventListener('click', () => {
+        sfx.playClick();
+        closeTowerInspector();
+      });
+
+      document.getElementById('btn-toggle-priority').addEventListener('click', () => {
+        if (!game.selectedTower) return;
+        sfx.playClick();
+        const order = ['first', 'strong', 'close'];
+        const nextIdx = (order.indexOf(game.selectedTower.priority) + 1) % order.length;
+        game.selectedTower.priority = order[nextIdx];
+        selectTower(game.selectedTower);
+      });
+
+      document.getElementById('btn-upgrade-tower').addEventListener('click', upgradeSelectedTower);
+      document.getElementById('btn-sell-tower').addEventListener('click', sellSelectedTower);
+      document.getElementById('btn-insp-trivia').addEventListener('click', () => {
+        if (game.selectedTower) openEncyclopediaModal(game.selectedTower.phys.id);
+      });
+
+      document.getElementById('btn-open-encyclopedia').addEventListener('click', () => openEncyclopediaModal());
+      document.getElementById('btn-menu-encyclopedia').addEventListener('click', () => openEncyclopediaModal());
+      document.getElementById('btn-close-encyclopedia').addEventListener('click', () => {
+        sfx.playClick();
+        document.getElementById('encyclopedia-modal').classList.add('hidden');
+      });
+
+      document.getElementById('btn-mute').addEventListener('click', () => {
+        sfx.muted = !sfx.muted;
+        document.getElementById('btn-mute').textContent = sfx.muted ? '🔇' : '🔊';
+      });
+
+      document.getElementById('btn-result-retry').addEventListener('click', () => {
+        sfx.playClick();
+        document.getElementById('result-modal').classList.add('hidden');
+        loadMap(game.selectedMapId);
+      });
+
+      document.getElementById('btn-result-menu').addEventListener('click', () => {
+        sfx.playClick();
+        document.getElementById('result-modal').classList.add('hidden');
+        document.getElementById('menu-modal').classList.remove('hidden');
+      });
+    }
+
+    let lastTime = 0;
+    function animate(now) {
+      requestAnimationFrame(animate);
+      if (!lastTime) lastTime = now;
+      const dt = Math.min(0.05, (now - lastTime) / 1000);
+      lastTime = now;
+
+      updateCameraTransform(0.14);
+      updateSimulation(dt);
+      renderer.render(scene, camera);
+    }
+
+    window.onload = function () {
+      initThreeScene();
+      bindCanvasControls();
+      buildMapSelectGrid();
+      buildTowerDockUI();
+      bindUIEvents();
+      loadMap('garden');
+      requestAnimationFrame(animate);
+    };
+  </script>
+</body>
+</html>
