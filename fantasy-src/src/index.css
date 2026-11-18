@@ -1,0 +1,99 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-display: 'Cinzel', 'Noto Sans TC', serif;
+    --font-sans: 'Noto Sans TC', system-ui, -apple-system, sans-serif;
+    --font-mono: 'JetBrains Mono', monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background-color: #060913;
+    color: #f1f5f9;
+    overflow-x: hidden;
+  }
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.font-mono-num {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Classic Final Fantasy Beveled Sapphire Command Window */
+.ff-window {
+  background: linear-gradient(180deg, rgba(19, 44, 108, 0.96) 0%, rgba(7, 17, 52, 0.98) 100%);
+  border: 2px solid rgba(226, 232, 240, 0.85);
+  box-shadow:
+    inset 0 0 0 2px rgba(15, 23, 42, 0.85),
+    inset 0 1px 12px rgba(96, 165, 250, 0.25),
+    0 10px 28px rgba(0, 0, 0, 0.65);
+}
+
+.ff-window-dark {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.95) 0%, rgba(6, 9, 19, 0.98) 100%);
+  border: 1.5px solid rgba(203, 213, 225, 0.55);
+  box-shadow:
+    inset 0 0 0 1px rgba(15, 23, 42, 0.9),
+    0 8px 24px rgba(0, 0, 0, 0.55);
+}
+
+/* 3D Flip Card Utilities for Physgram Trivia */
+.flip-perspective {
+  perspective: 1100px;
+}
+
+.flip-inner {
+  position: relative;
+  width: 100%;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-style: preserve-3d;
+}
+
+.flip-inner.is-flipped {
+  transform: rotateY(180deg);
+}
+
+.flip-face {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+
+.flip-face-back {
+  transform: rotateY(180deg);
+}
+
+@keyframes ff-cursor-bob {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(4px); }
+}
+
+.ff-cursor {
+  animation: ff-cursor-bob 0.7s ease-in-out infinite;
+}
+
+@keyframes ff-damage-pop {
+  0% { opacity: 0; transform: translate(-50%, 10px) scale(0.75); }
+  20% { opacity: 1; transform: translate(-50%, -18px) scale(1.18); }
+  45% { transform: translate(-50%, -6px) scale(1); }
+  80% { opacity: 1; transform: translate(-50%, -14px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -28px) scale(0.95); }
+}
+
+.ff-damage-num {
+  animation: ff-damage-pop 1.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ff-cursor,
+  .ff-damage-num {
+    animation: none;
+  }
+  .flip-inner {
+    transition: none;
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "物理幻想：27 賢者戰紀 (Physics Fantasy)",
+  "description": "結合太空戰士經典回合制攻防戰鬥與 27 位物理學家的公式奧義對決遊戲",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
